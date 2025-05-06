@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-04-30
+// MDH CAS MOD(by Moerderhoschi) - v2025-05-06
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +35,19 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		
 				if(_c) then
 				{
+					mdhCASBriefingFnc =
+					{
+						if ((_this#1) > 1) then
+						{
+							profileNameSpace setVariable[_this#0,_this#1];
+						}
+						else
+						{
+							missionNameSpace setVariable [_this#0,_this#1];
+						};
+						systemChat (_this#2);
+					};
+
 					player createDiaryRecord
 					[
 						"MDH Mods",
@@ -44,6 +57,21 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3.<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
+							+ '<br/>'
+							+ 'MDH CAS Modoptions:<br/>'
+							+ 'Set minDistance to player/strikepos for CAS Target: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc">25m</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc">50m</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc">75m</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc">100m</execute></font color>'
+							+ '<br/>'
+							+ 'Use MapMarker with CAS in name for next CAS Strike: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',1,''MDH CAS for MapMarker activated''] call mdhCASBriefingFnc">activate</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',0,''MDH CAS for MapMarker deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
+							+ '<br/>'
+							+ 'Select Voicelanguage for CAS Strike: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',5,''MDH CAS Voicelanguage always BLUFOR english activated''] call mdhCASBriefingFnc">BLUFOR english</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',6,''MDH CAS Voicelanguage Arma 3 side standard activated''] call mdhCASBriefingFnc">Arma 3 side standard</execute></font color>'							+ '<br/>'
 							+ '<br/>'
 							+ 'If you have any question you can contact me at the steam workshop page.<br/>'
 							+ '<br/>'
@@ -122,7 +150,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								if (_debug) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
 								_r = selectRandom [0,1,2];
 								_r = str(_r);
-								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_BHQ_"+_r+".ogg"];
+								_l = "B";
+								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",5] == 6) then
+								{
+									if (side group player == east) then {_l = "O"};
+									if (side group player == resistance) then {_l = "I"};
+								};
+
+								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
 								systemChat "Close Air Support called";
 								if (_debug) then
 								{
@@ -140,7 +175,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_enemySides = [];
 								{if ((side group player) getFriend _x < 0.6) then {_enemySides pushBack _x}} forEach [east,west,resistance];
 								_v = if (viewDistance > 1500) then {1500} else {viewDistance};
-								_min = 25;
+								_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
 								if (_debug) then {_min = 0};
 								_AA = [];
 								_mbt = [];
@@ -150,24 +185,54 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_mbtMoving = [];
 								_carsMoving = [];
 								_tanksMoving = [];
+
+								_strikePos = getPos vehicle player;
+								_m = "";
+
+								if (missionNameSpace getVariable ["mdhCASModMapLocation",0] != 0) then
 								{
-									if (alive _x && {side _x in _enemySides} && {_x distance vehicle player > _min} && {_x distance vehicle player < _v }) then
+									{
+										_s = "_USER_DEFINED #" + getPlayerID player;
+										if (_x find _s > -1) then
+										{
+											if (toLower(markerText _x) find "cas" != -1) exitWith
+											{
+												_m = _x;
+												_strikePos = getmarkerPos _m;
+											};
+										};
+									} forEach allMapMarkers;
+
+									if (_m == "") then
+									{
+										{
+											if (toLower(markerText _x) find "cas" != -1) exitWith
+											{
+												_m = _x;
+												_strikePos = getmarkerPos _m;
+											};
+										} forEach allMapMarkers;
+									};									
+								};
+
+								{
+									if (alive _x && {side _x in _enemySides} && {_x distance _strikePos > _min} && {_x distance _strikePos < _v }) then
 									{
 										_isAA = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "irScanRangeMin") > 600);
 										_isArty = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "artilleryScanner") > 0);
 										_isMBT = (toLowerANSI(typeOf _x) find "mbt") != -1;
 		
-										if (_x isKindOf "LAND" && {_isAA} && {speed _x == 0}) exitWith {_AA pushBack [_x distance vehicle player, _x]};
-										if (_x isKindOf "LAND" && {_isAA} && {speed _x >  0}) exitWith {_AAmoving pushBack [_x distance vehicle player, _x]};
+										if (_x isKindOf "LAND" && {_isAA} && {speed _x == 0}) exitWith {_AA pushBack [_x distance _strikePos, _x]};
+										if (_x isKindOf "LAND" && {_isAA} && {speed _x >  0}) exitWith {_AAmoving pushBack [_x distance _strikePos, _x]};
 		
-										if (_x isKindOf "TANK" && {!_isArty} && {_isMBT} && {speed _x == 0}) exitWith {_mbt pushBack [_x distance vehicle player, _x]};
-										if (_x isKindOf "TANK" && {!_isArty} && {_isMBT} && {speed _x >  0}) exitWith {_mbtMoving pushBack [_x distance vehicle player, _x]};
+										if (_x isKindOf "TANK" && {!_isArty} && {_isMBT} && {speed _x == 0}) exitWith {_mbt pushBack [_x distance _strikePos, _x]};
+										if (_x isKindOf "TANK" && {!_isArty} && {_isMBT} && {speed _x >  0}) exitWith {_mbtMoving pushBack [_x distance _strikePos, _x]};
 		
-										if (_x isKindOf "TANK" && {speed _x == 0}) exitWith {_tanks pushBack [_x distance vehicle player, _x]};
-										if (_x isKindOf "TANK" && {speed _x >  0}) exitWith {_tanksMoving pushBack [_x distance vehicle player, _x]};
+										if (_x isKindOf "TANK" && {speed _x == 0}) exitWith {_tanks pushBack [_x distance _strikePos, _x]};
+										if (_x isKindOf "TANK" && {speed _x >  0}) exitWith {_tanksMoving pushBack [_x distance _strikePos, _x]};
 		
-										if (_x isKindOf "CAR" && {speed _x == 0}) exitWith {_cars pushBack [_x distance vehicle player, _x]};
-										if (_x isKindOf "CAR" && {speed _x == 0}) exitWith {_carsMoving pushBack [_x distance vehicle player, _x]};
+										if (_x isKindOf "CAR" && {speed _x == 0}) exitWith {_cars pushBack [_x distance _strikePos, _x]};
+										if (_x isKindOf "CAR" && {speed _x == 0}) exitWith {_carsMoving pushBack [_x distance _strikePos, _x]};
 									};
 								} forEach vehicles;
 								
@@ -177,9 +242,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								{
 									_units = [];
 									{
-										if (alive _x && {side _x in _enemySides} && {_x distance vehicle player > _min} && {_x distance vehicle player < _v }) then
+										if (alive _x && {side _x in _enemySides} && {_x distance _strikePos > _min} && {_x distance _strikePos < _v }) then
 										{
-											_units pushBack [_x distance vehicle player, _x];
+											_units pushBack [_x distance _strikePos, _x];
 										}
 									} forEach allUnits;
 		
@@ -215,41 +280,113 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								if (_tM2 == player && {count _tanks > 0}) then {if((_tanks#0#1) distance _t < _dist )then{_tM2 = _tanks#0#1}; _tanks deleteAt 0};
 								if (_tM2 == player && {count _cars > 0}) then {if((_cars#0#1) distance _t < _dist )then{_tM2 = _cars#0#1}; _cars deleteAt 0};
 								if (_tM2 == player && {_t isKindOf "TANK" OR _t isKindOf "CAR"}) then {_tM2 = _t};
-		
+
 								if (_t == player) exitWith
 								{
-									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_BHQ_"+_r+".ogg"];
-									systemChat "Close Air Support canceled, no valid targets found (not to close and not to far from caller)";
+									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_"+_l+"HQ_"+_r+".ogg"];
+									systemChat "Close Air Support canceled no valid targets found";
+									systemChat "(not to close and not to far from caller/strikePos)";
 									localNameSpace setVariable['mdhCASModCallTime',time + 5];
 								};
 		
 								_logic = "logic" createVehicleLocal getPos _t;
 								_logic setPos getPos _t;
 								_logic attachTo [_t,[0,0,0]];
-							
-								_planeClass = "B_Plane_CAS_01_F";
-								if (side group player == east) then {_planeClass = "O_Plane_CAS_02_F"};
-								if (side group player == resistance) then {_planeClass = "I_Plane_Fighter_03_CAS_F"};
+
+								_side = "West";
+								if (side group player == east) then {_side = "East"};
+								if (side group player == resistance) then {_side = "Inde"};
+								
+								_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+"1"),["mdhNothing",[],[],[],[]]];
+								_planeCamo = _planeClass#1;
+								_planePylon = _planeClass#2;
+								_planeWeapons = _planeClass#3;
+								_planeMagazines = _planeClass#4;
+								_planeClass = _planeClass#0;
+
+								if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
+								{
+									_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+"2"),["mdhNothing",[],[],[],[]]];
+									_planeCamo = _planeClass#1;
+									_planePylon = _planeClass#2;
+									_planeWeapons = _planeClass#3;
+									_planeMagazines = _planeClass#4;
+									_planeClass = _planeClass#0;
+								};
+
+								if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
+								{
+									_planeCamo = [];
+									_planePylon = [];
+									_planeWeapons = [];
+									_planeMagazines = [];
+									_planeClass = "B_Plane_CAS_01_F";
+									if (side group player == east) then {_planeClass = "O_Plane_CAS_02_F"};
+									if (side group player == resistance) then {_planeClass = "I_Plane_Fighter_03_CAS_F"};
+								};
+
 								_planeCfg = configfile >> "cfgvehicles" >> _planeClass;
 								if !(isclass _planeCfg) exitwith {["Vehicle class '%1' not found",_planeClass] call bis_fnc_error; false};
-							
-								_weaponTypes = ["machinegun","bomblauncher"];
+
+								_weaponTypes = ["machinegun","bomblauncher","vehicleweapon","missilelauncher"];
 								_weapons = [];
+								_missilelauncher = [];
+								_weaponsSorted = [0,0,0];
 								{
-									if (tolower ((_x call bis_fnc_itemType) select 1) in _weaponTypes) then
+									_type = tolower((_x call bis_fnc_itemType) select 1);
+									if(_type in _weaponTypes) then
 									{
 										_modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
 										if (count _modes > 0) then
 										{
 											_mode = _modes select 0;
 											if (_mode == "this") then {_mode = _x;};
-											_weapons set [count _weapons,[_x,_mode]];
+											if (_type in ["machinegun","bomblauncher"]) then {_weapons set [count _weapons,[_x,_mode]]};
+											if (_type == "machinegun" && {typename(_weaponsSorted#0)=="SCALAR"}) exitWith {_weaponsSorted set [0,[_x,_mode]]};
+											if (_type == "bomblauncher" && {typename(_weaponsSorted#1)=="SCALAR"}) exitWith {_weaponsSorted set [1,[_x,_mode]]};
+											if (_type == "bomblauncher" && {typename(_weaponsSorted#2)=="SCALAR"} && {_x != _weaponsSorted#1#0}) exitWith {_weaponsSorted set [2,[_x,_mode]]};
+											//if (_type == "missilelauncher") exitWith {_weaponsSorted set [3,[_x,_mode]]};
+											//if (_type == "missilelauncher") exitWith {(_weaponsSorted#3) pushBackUnique _x};
+											if (_type == "missilelauncher") exitWith {_missilelauncher pushBackUnique _x};
+
+											_w = _x;
+											{
+												if (_x in compatibleMagazines _w) then
+												{
+													_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
+													if (_ammo isKindOf "BulletCore" && {typename(_weaponsSorted#0)=="SCALAR"}) exitWith
+													{
+														_weaponsSorted set [0,[_w,_mode]];
+														_weapons set [count _weapons,[_w,_mode]];
+													};
+
+													if (_ammo isKindOf "BombCore" && {typename(_weaponsSorted#1)=="SCALAR"}) exitWith
+													{
+														_weaponsSorted set [1,[_w,_mode]];
+														_weapons set [count _weapons,[_w,_mode]];
+													};
+
+													if (_ammo isKindOf "BombCore" && {typename(_weaponsSorted#2)=="SCALAR"} && {_w != _weaponsSorted#1#0}) exitWith
+													{
+														_weaponsSorted set [2,[_w,_mode]];
+														_weapons set [count _weapons,[_w,_mode]];
+													};
+
+													if (_ammo isKindOf "MissileBase") exitWith
+													{
+														_missilelauncher pushBackUnique _w;
+														_weapons set [count _weapons,[_w,_mode]];
+													};
+												};
+											} forEach _planeMagazines;
 										};
 									};
-		
-								} foreach (_planeClass call bis_fnc_weaponsEntityType);
-								if (count _weapons == 0) exitwith {["No weapon of types %2 wound on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
-							
+								} foreach (if (count _planeWeapons == 0) then {(_planeClass call bis_fnc_weaponsEntityType)} else {_planeWeapons});
+								if (count _weapons == 0) exitwith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
+								//systemChat str(_weapons);
+								_weapons = _weaponsSorted;
+								//systemChat str(_weaponsSorted);
+
 								_posATL = getposATL _logic;
 								_pos = +_posATL;
 								//_pos set [2,(_pos select 2) + getterrainheightasl _pos];
@@ -295,13 +432,29 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								//_logic setPos ([getPos _logic, 3, direction _logic] call bis_fnc_relpos);
 		
 		
-								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\50_Cas\mp_groundsupport_50_cas_BHQ_"+_r+".ogg"];
+								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\50_Cas\mp_groundsupport_50_cas_"+_l+"HQ_"+_r+".ogg"];
 								systemChat "Close Air Support incomming";
 		
 								_z="--- Create plane";
 								_planeSide = side group player;
+								if (_planeSide == CIVILIAN) then
+								{
+									if !(resistance in _enemySides) then {_planeSide = resistance; _planeClass = "I_Plane_Fighter_03_CAS_F"};
+									if !(east in _enemySides)       then {_planeSide = east;       _planeClass = "O_Plane_CAS_02_F"};
+									if !(west in _enemySides)       then {_planeSide = west;       _planeClass = "B_Plane_CAS_01_F"};
+								};
 								_planeArray = [_planePos,_dir,_planeClass,_planeSide] call bis_fnc_spawnVehicle;
 								_plane = _planeArray select 0;
+								
+								{_plane setObjectTextureGlobal [_forEachIndex, _x]} forEach _planeCamo;
+								if (count _planeMagazines != 0) then
+								{
+									{_plane setPylonLoadout [_x#0, _x#3, false, _x#2]} forEach _planePylon;
+									{if !(_x in _planeMagazines) then {_plane removeMagazineGlobal _x}} forEach (magazines _plane);
+									{if !(_x in magazines _plane) then {_plane addMagazineGlobal _x}} forEach _planeMagazines;
+									{if !(_x in _planeWeapons) then {_plane removeWeaponGlobal _x}} forEach (weapons _plane);
+									{if !(_x in weapons _plane) then {_plane addWeaponGlobal _x}} forEach _planeWeapons;
+								};
 								_planeDriver = driver _plane;
 								_plane setposasl _planePos;
 								_plane move ([_pos,_dis,_dir] call bis_fnc_relpos);
@@ -370,7 +523,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								
 								//setAccTime 0.4;
 								//if (_debug) then {[_plane] spawn{params["_plane"];for "_i" from 1 to 10 do {sleep 0.1;player setDir ([player, _plane] call BIS_fnc_dirTo)}}};
-		
+
 								waituntil
 								{
 									_fireProgress = _plane getvariable ["fireProgress",0];
@@ -412,25 +565,61 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									if ((getposasl _plane) distance _pos < (_fireDist + 900) && {damage _plane < 0.2} && {_fireNull} && {_tM1 != player} && {_plane getVariable["mdhMissileNotFired",true]}) then
 									{
 										_plane setVariable["mdhMissileNotFired",false];
-										[_plane,_tM1,_tM2] spawn
+										//_missilelauncher = if (typeName(_weapons#3) == "ARRAY") then {[_weapons#3]} else {[]};
+										[_plane,_tM1,_tM2,_missilelauncher] spawn
 										{
-											params["_plane","_tM1","_tM2"];
+											params["_plane","_tM1","_tM2","_missilelauncher"];
+											if (count _missilelauncher == 0) exitWith {};
+											_m = "";
+											{
+												_w = _x;
+												{
+													if (_x in compatibleMagazines _w) then
+													{
+														_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
+														if (_m == "" && {_ammo isKindOf "MissileBase"}) then
+														{
+															_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
+															_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
+															if (_airLock < 2 && {_lockType == 0}) then {_m = _w};
+														};
+													};
+												} forEach magazines _plane;
+											} foreach _missilelauncher;
+											if (_m == "") exitWith {};
+											
+											_planeDriver = driver _plane;
 											_tM1 setVehicleTiPars [1, 1, 1];
-											_tM2 setVehicleTiPars [1, 1, 1];
-											//setAccTime 0.03;
-											_b = "Missile_AGM_02_F" createVehicle (_plane modelToWorld [3,-1,0]);
-											_b setDir getDir _plane;
+													//setAccTime 0.2;
+													//sleep 1;
+													//_b = "Missile_AGM_02_F" createVehicle [50,50,50];
+													//setAccTime 0.1;
+											_planeDriver fireattarget [_tM1,_m];
+											_b = nearestObjects [_plane, ["MissileBase"], 15];
+											if (count _b == 0) exitWith {};
+											_b = _b#0;
+													//_b setDir getDir _plane;
+													//_b attachTo [_plane,[3,2,2]];
+													//detach _b;
 											_b setMissileTarget _tM1;
-											_b setVelocity [(velocity _plane#0)*1.5,(velocity _plane#1)*1.5,(velocity _plane#2)*1.5];
+													//_b setVelocity [(velocity _plane#0)*1.5,(velocity _plane#1)*1.5,(velocity _plane#2)*1.5];
 											[_b, _tM1] spawn {params["_b","_tM1"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tM1}};
 											sleep 3;
 											if (damage _plane < 0.2) then
 											{
-												//setAccTime 0.03;
-												_b = "Missile_AGM_02_F" createVehicle (_plane modelToWorld [-3,-1,0]);
-												_b setDir getDir _plane;
+														//setAccTime 0.2;
+														//sleep 1;
+														//_b = "Missile_AGM_02_F" createVehicle [50,50,50];
+												_tM2 setVehicleTiPars [1, 1, 1];
+												_planeDriver fireattarget [_tM1,_m];
+														//_b setDir getDir _plane;
+														//_b attachTo [_plane,[-3,2,2]];
+														//detach _b;
+												_b = nearestObjects [_plane, ["MissileBase"], 15];
+												if (count _b == 0) exitWith {};
+												_b = _b#0;
 												_b setMissileTarget _tM2;
-												_b setVelocity [(velocity _plane#0)*1.5,(velocity _plane#1)*1.5,(velocity _plane#2)*1.5];
+														//_b setVelocity [(velocity _plane#0)*1.5,(velocity _plane#1)*1.5,(velocity _plane#2)*1.5];
 												[_b, _tM2] spawn {params["_b","_tM2"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tM2}};
 											};
 										};
@@ -461,15 +650,109 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_duration = 99;
 											_time = time + _duration;
 											_startTime = 0;
+											_bombDrop = 0;
 											_bombDrop = 2;
 											_bombCounter = 0;
 											_bombDelay = 3;
-											_machinegun = [_weapons#0];
-											_bomblauncher = [_weapons#1];
+											_machinegun = if (typeName(_weapons#0) == "ARRAY") then {[_weapons#0]} else {[]};
+											_bomblauncher = if (typeName(_weapons#1) == "ARRAY") then {[_weapons#1]} else {[]};
+											if (typeName(_weapons#2) == "ARRAY") then {_bomblauncher pushBack _weapons#2};
+											//systemChat str(_bomblauncher);
+											//systemChat ("w: "+str(_weapons));
+
+											//["Initialize",[player,[],true,true,true,false,true,false,true,true]]call BIS_fnc_EGSpectator;
+											//[_plane] call BIS_fnc_EGSpectatorCameraSetTarget;
+											//setaccTime 0.05;
+											//sleep 0.2;
+											if (false) then
+											{
+												_b = "Bo_GBU12_LGB" createVehicle [50,50,50];
+												_b setDir getDir _plane;
+												_b attachTo [_plane,[0,-15,-2]];
+												detach _b;
+												//if (true)then{_eh=addMissionEventHandler['Draw3D',{_b=_thisArgs#0;_t=_thisArgs#1;drawLine3D[getPos _b,getPos _t,[0,0,1,1],10]},[_b,_target]];_eh spawn{sleep 30;removeMissionEventHandler ['Draw3D',_this]}};
+												_p = velocity _plane;
+												//_b setVelocity velocity _plane;
+												_b setVelocity [(_p#0)*0.9,(_p#1)*0.9,(_p#2)*1.5];
+											
+												_b2 = "Bo_GBU12_LGB" createVehicle [50,50,50];
+												_b2 setDir getDir _plane;
+												_b2 attachTo [_plane,[0,-25,-2]];
+												detach _b2;
+												_b2 setVelocity [(_p#0)*0.9,(_p#1)*0.9,(_p#2)*1.5];
+											
+												[_b,_b2,_target] spawn
+												{
+													params["_b","_b2","_target"];
+													while {alive _b} do
+													{
+														_bASL = ((getPosASL _b)#2);
+														_tASL = ((getPosASL _target)#2);
+														_diff = _bASL - _tASL;
+														if (_diff > 30) then
+														{
+															_t = getPosASL _target;
+															_d = (_target distance _b)/12;
+															_t set [2,((getPosASL _target)#2) + (_d * 1.2)];
+															_b setVectorDirAndUp ([getPosASL _b, _t] call BIS_fnc_findLookAt);
+															_b2 setVectorDirAndUp ([getPosASL _b, _t] call BIS_fnc_findLookAt);
+														};
+														//systemChat str(_diff);
+														//if (_diff < 50) then {setAccTime 0.1};
+														sleep 0.1;
+													};
+												};
+											};
+											//systemChat ("m: "+str(_machinegun));
+											//systemChat ("b: "+str(_bomblauncher));
+
 											waituntil
 											{
 												{_planeDriver fireattarget [_target,(_x select 0)]} foreach _machinegun;
-												{if (time > (_startTime + _bombDelay) && {_bombCounter < _bombDrop}) then {_bombCounter = _bombCounter + 1; _startTime = time; _planeDriver fireattarget [_target,(_x select 0)]}} foreach _bomblauncher;
+												{
+													if (time > (_startTime + _bombDelay) && {_bombCounter < _bombDrop}) then
+													{
+														_bombCounter = _bombCounter + 1; _startTime = time; _planeDriver fireattarget [_target,(_x select 0)];
+														if (count _bomblauncher > 1) then {_bomblauncher = [_bomblauncher#1]};
+	
+														_b = nearestObjects [_plane, ["BombCore"], 15];
+														if (count _b != 0) then
+														{
+															_t = _b#0;
+															{if !(_x getVariable ["mdhCASBombGuided",false]) then {_t = _x}} forEach _b;
+															_b = _t;
+															if (_b getVariable ["mdhCASBombGuided",false]) exitWith {};
+															_b setVariable ["mdhCASBombGuided",true];
+															[_b,_target,_plane] spawn
+															{
+																params["_b","_target","_plane"];
+																_i = 0;
+																waitUntil{sleep 1; _i = _i + 1; alive _b && {_b distance _plane > 30 or _i > 4}};
+																//systemChat str(_i);
+																_diff = 100;
+																while {alive _b && {_diff > 50} && {_b distance _target > 100}} do
+																{
+																	_bASL = ((getPosASL _b)#2);
+																	_tASL = ((getPosASL _target)#2);
+																	_diff = _bASL - _tASL;
+																	_t = getPosASL _target;
+																	_d = (_target distance _b)/12;
+																	_t set [2,((getPosASL _target)#2) + (_d * 1.2)];
+																	_b setVectorDirAndUp ([getPosASL _b, _t] call BIS_fnc_findLookAt);
+																	//systemChat str(_b distance _target);
+																	sleep 0.1;
+																};
+	
+																//systemChat "LastSetup";
+																while {alive _b && {_b distance _target > 50}} do
+																{
+																	_b setVectorDirAndUp ([getPosASL _b, getPosASL _target] call BIS_fnc_findLookAt)
+																};
+															};
+															if (false)then{_eh=addMissionEventHandler['Draw3D',{_b=_thisArgs#0;_t=_thisArgs#1;drawLine3D[getPos _b,getPos _t,[0,0,1,1],10]},[_b,_target]];_eh spawn{sleep 30;removeMissionEventHandler ['Draw3D',_this]}};
+														};
+													};
+												} foreach _bomblauncher;
 												_plane setvariable ["fireProgress",(1 - ((_time - time) / _duration)) max 0 min 1];
 												sleep 0.1;
 												time > _time || (getPos _plane #2) < 250 || isnull _plane || damage _plane > 0.2
@@ -523,7 +806,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							,"mdhCAS\mdhCAS.paa"
 							,"
 							alive _target 
-		
 							&& {if (!isNil'mdhCASModNeededItemToCall') then
 							{
 								mdhCASModNeededItemToCall in
@@ -548,8 +830,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							,_hoschisCASCode
 							,{}
 							,[0]
-							//,3
-							,1
+							,2
 							,-1
 							,false
 							,false
@@ -557,6 +838,118 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						] call mdhHoldActionAdd;
 					};
 				} forEach _a;
+				
+				if (isMultiplayer OR {worldName != "VR"}) exitWith {};
+				_hoschisCASplaneChangeCode =
+				{
+					params ["_target", "_caller", "_actionId", "_arguments"];
+					_v = _arguments#0;
+					if (_v == 1) then {profileNameSpace setVariable ["mdhCASPlaneWest1",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 2) then {profileNameSpace setVariable ["mdhCASPlaneWest2",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 3) then {profileNameSpace setVariable ["mdhCASPlaneWest3",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 4) then {profileNameSpace setVariable ["mdhCASPlaneEast1",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 5) then {profileNameSpace setVariable ["mdhCASPlaneEast2",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 6) then {profileNameSpace setVariable ["mdhCASPlaneEast3",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 7) then {profileNameSpace setVariable ["mdhCASPlaneInde1",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 8) then {profileNameSpace setVariable ["mdhCASPlaneInde2",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+					if (_v == 9) then {profileNameSpace setVariable ["mdhCASPlaneInde3",[typeof _target, getObjectTextures _target, getAllPylonsInfo _target, weapons _target, magazines _target]]};
+
+					_t = "West";
+					if (_v > 3 && _v < 7) then {_t = "East"};
+					if (_v > 6) then {_t = "Independent"};
+
+					_t = "plane saved for MDH CAS side " + _t;
+					if (_v == 0) then {_t = "MDH CAS all saved planes cleared"};
+					if (_v == 0) then { {_n = _x; { profileNameSpace setVariable [("mdhCASPlane"+_x+_n),nil]} forEach ["West","East","Inde"]} forEach ["","1","2","3"] };
+					systemChat _t;
+				};
+
+				{
+					if (alive _x) then
+					{
+						if !(_x isKindOf "PLANE") exitWith {};
+						if (_x getVariable ["mdhCASsaveActionSet",false]) exitWith {};
+
+						_x setVariable ["mdhCASsaveActionSet",true];
+						_b = _x;
+						{
+							_t = "save for MDH CAS side ";
+							//if (_x == 1) then {_t = _t + "west prio 1"};
+							if (_x == 1) then {_t = _t + "west"};
+							if (_x == 2) then {_t = _t + "west prio 2"};
+							if (_x == 3) then {_t = _t + "west prio 3"};
+							//if (_x == 4) then {_t = _t + "east prio 1"};
+							if (_x == 4) then {_t = _t + "east"};
+							if (_x == 5) then {_t = _t + "east prio 2"};
+							if (_x == 6) then {_t = _t + "east prio 3"};
+							//if (_x == 7) then {_t = _t + "independent prio 1"};
+							if (_x == 7) then {_t = _t + "independent"};
+							if (_x == 8) then {_t = _t + "independent prio 2"};
+							if (_x == 9) then {_t = _t + "independent prio 3"};
+							if (_x == 0) then {_t = "MDH CAS clear all saved planes"};
+
+							[
+								_b
+								,_t
+								,"a3\ui_f_oldman\Data\IGUI\Cfg\HoldActions\holdAction_sleep_ca.paa"
+								,"a3\ui_f_oldman\Data\IGUI\Cfg\HoldActions\holdAction_sleep_ca.paa"
+								,"
+								alive _target 
+								&& {_target isKindOf 'PLANE'}
+								&& {_target distance player < 15}
+								&&
+								{
+									_weaponTypes = ['machinegun','bomblauncher','vehicleweapon'];
+									_weapons = [];
+									{
+										_type = tolower((_x call bis_fnc_itemType) select 1);
+										if(_type in _weaponTypes) then
+										{
+											_modes = getarray (configfile >> 'cfgweapons' >> _x >> 'modes');
+											if (count _modes > 0) then
+											{
+												_mode = _modes select 0;
+												if (_mode == 'this') then {_mode = _x;};
+												if (_type in ['machinegun','bomblauncher']) then {_weapons set [count _weapons,[_x,_mode]]};
+												
+												_w = _x;
+												{
+													if (_x in compatibleMagazines _w) then
+													{
+														_ammo = gettext(configfile >> 'CfgMagazines' >> _x >> 'ammo');
+
+														if (_ammo isKindOf 'BulletCore') then
+														{
+															_weapons set [count _weapons,[_w,_mode]];
+														};
+
+														if (_ammo isKindOf 'BombCore') then
+														{
+															_weapons set [count _weapons,[_w,_mode]];
+														};
+													};
+												} forEach magazines _target;
+											};
+										};
+									} foreach ((typeof _target) call bis_fnc_weaponsEntityType);
+									count _weapons > 0
+								}
+								"
+								,"true"
+								,{}
+								,{}
+								,_hoschisCASplaneChangeCode
+								,{}
+								,[_x]
+								,2
+								,-99
+								,false
+								,false
+								,false
+							] call mdhHoldActionAdd;											
+						} forEach [1, 4, 7, 0];
+					};
+				} forEach vehicles;
 			};
 		};
 
