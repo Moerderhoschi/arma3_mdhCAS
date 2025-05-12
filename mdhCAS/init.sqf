@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-05-09
+// MDH CAS MOD(by Moerderhoschi) - v2025-05-12
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,39 +37,136 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 				{
 					mdhCASBriefingFnc =
 					{
-						//if (isServer OR serverCommandAvailable "#logout") then
-						//{
-							if (_this#0 == "mdhCASModCallOverModTab") exitWith
+						if (_this#0 == "mdhCASModCallOverModTab") exitWith
+						{
+							_code = localNameSpace getVariable["mdhCASCode",0];
+							if (typename _code == "SCALAR") exitWith {systemChat "mdhCASCode not found"};
+							if !(player in (localNameSpace getVariable ["mdhCASAllowedCaller",[]])) exitWith {systemChat "player not in allowed MDH CAS caller"};
+							_f = if (!isNil'mdhCASModNeededItemToCall')then
 							{
-								_t = localNameSpace getVariable['mdhCASModCallTime',time - 1];
-								if (_t < time) then
-								{
-									call (localNameSpace getVariable["mdhCASCode",_hoschisCASCode]);
-								}
-								else
-								{
-									_t = str(round(_t - time));
-									systemChat ("MDH CAS cooldown " + _t + " sec");
-								};
+								mdhCASModNeededItemToCall in
+								(
+									itemsWithMagazines player 
+									+ assignedItems [player, true, true] 
+									+ weapons player 
+									+ primaryWeaponItems player 
+									+ secondaryWeaponItems player 
+									+ handgunItems player
+								)
+							}
+							else
+							{
+								true
 							};
-							//if !(_this#0 == "mdhCASModDebug") then
-							//{
-								profileNameSpace setVariable[_this#0,_this#1];
-							//}
-							//else
-							//{
-								//missionNameSpace setVariable[_this#0,_this#1];
-							//	_s = "B";
-							//	if (side group player == east) then {_s = "O"};
-							//	if (side group player == resistance) then {_s = "I"};
-							//	mdhCASModNeededItemToCall = (_s + "_UavTerminal");
-							//};
-							systemChat (_this#2);
-						//}
-						//else
-						//{
-						//	systemChat "ONLY ADMIN CAN CHANGE OPTION";
-						//};
+							if !(_f) exitWith {systemChat ('player has not needed item for MDH CAS call "'+mdhCASModNeededItemToCall+'"')};
+							_t = localNameSpace getVariable['mdhCASModCallTime',time - 1];
+							if (_t > time) exitWith
+							{
+								_t = round(_t - time);
+								systemChat ("MDH CAS cooldown " + str(_t) + " sec" + (if (_t > 180) then {" / " + str(round((_t/60) * 100) / 100) + " min"} else {""}));
+							};
+
+							[player] call _code;
+						};
+
+						profileNameSpace setVariable[_this#0,_this#1];
+						systemChat (_this#2);
+
+						if (_this#0 == "mdhCASModTimeout") then
+						{
+							_t = localNameSpace getVariable['mdhCASModCallTime',time - 1];
+							if (_t > time && {(time + (_this#1)) < _t}) then
+							{
+								_t = time + (_this#1);
+								localNameSpace setVariable['mdhCASModCallTime', _t];
+								_t = round(_t - time);
+								systemChat ("MDH CAS cooldown " + str(_t) + " sec" + (if (_t > 180) then {" / " + str(round((_t/60) * 100) / 100) + " min"} else {""}));
+							};
+						};
+
+						if (_this#0 == "mdhCASModPlaneType") then
+						{
+							_a = (profileNameSpace getVariable [("mdhCASPlane" + str(side group player) + str(_this#1)),0]);
+							if (typename _a == "SCALAR") exitWith {systemChat "no saved planeconfig found!"; systemChat "using Arma 3 standard plane!"};
+
+							_t = getText(configfile >> "CfgVehicles" >> (_a#0) >> "displayName");
+							if (_t == "") exitWith {systemChat ((_a#0)+" not found in current loaded mods!"); systemChat "using Arma 3 standard plane!"};
+
+							_weapons = [];
+							_weaponsSorted = [0,0,0,0];
+							{
+								_tx = getText(configfile >> "CfgWeapons" >> _x >> "displayName");
+								if (_tx == "") then {systemChat (_x + " not found in current loaded mods!")};
+								_type = toLowerANSI((_x call bis_fnc_itemType)#1);
+								if(_type in ["machinegun","bomblauncher","vehicleweapon","missilelauncher"]) then
+								{
+									_modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
+									if (count _modes > 0) then
+									{
+										_mode = _modes#0;
+										if (_mode == "this") then {_mode = _x};
+										if (_type == "machinegun" && {typename(_weaponsSorted#0)=="SCALAR"}) exitWith {_weaponsSorted set [0,_x]};
+										if (_type == "bomblauncher" && {typename(_weaponsSorted#1)=="SCALAR"}) exitWith {_weaponsSorted set [1,_x]};
+										if (_type == "bomblauncher" && {typename(_weaponsSorted#2)=="SCALAR"} && {_x != _weaponsSorted#1}) exitWith {_weaponsSorted set [2,_x]};
+										if (_type == "missilelauncher" && {typename(_weaponsSorted#3)=="SCALAR"}) exitWith
+										{
+											_w = _x;
+											{
+												_tx = getText(configfile >> "CfgMagazines" >> _x >> "displayName");
+												if (_tx == "" && {!("flare" in toLowerANSI(_x))} && {!("chaff" in toLowerANSI(_x))}) then {systemChat (_x + " not found in current loaded mods!")};
+
+												if (typename(_weaponsSorted#3)=="SCALAR" && {_x in compatibleMagazines _w}) then
+												{
+													_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
+													if (_ammo isKindOf "MissileBase") then
+													{
+														_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
+														_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
+														if (_airLock < 2 && {_lockType == 0}) then {_weaponsSorted set [3,_w]};
+													};
+												};
+											} forEach (_a#4);
+										};
+
+										_w = _x;
+										{
+											if (_x in compatibleMagazines _w) then
+											{
+												_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
+												if (_ammo isKindOf "BulletCore" && {typename(_weaponsSorted#0)=="SCALAR"}) exitWith
+												{
+													_weaponsSorted set [0,_w];
+												};
+
+												if (_ammo isKindOf "BombCore" && {typename(_weaponsSorted#1)=="SCALAR"}) exitWith
+												{
+													_weaponsSorted set [1,_w];
+												};
+
+												if (_ammo isKindOf "BombCore" && {typename(_weaponsSorted#2)=="SCALAR"} && {_w != _weaponsSorted#1#0}) exitWith
+												{
+													_weaponsSorted set [2,_w];
+												};
+
+												if (_ammo isKindOf "MissileBase" && {typename(_weaponsSorted#3)=="SCALAR"}) exitWith
+												{
+													_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
+													_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
+													if (_airLock < 2 && {_lockType == 0}) then {_weaponsSorted set [3,_w]};
+												};
+											};
+										} forEach (_a#4);
+									};
+								};
+							} foreach (_a#3);
+							{if (typename _x == "STRING") then {_weapons pushBack _x}} forEach _weaponsSorted;
+
+							{
+								_tx = getText(configfile >> "CfgWeapons" >> _x >> "displayName");							
+								_t = _t + " , " + _tx;
+							} forEach _weapons;
+							systemChat _t;							
+						};
 					};
 
 					player createDiaryRecord
@@ -82,47 +179,85 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
-							+ 'MDH CAS Modoptions:<br/>'
-							+ 'Set minDistance to player for CAS Target: '
-							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc">25m</execute></font color>'
-							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc">50m</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc">75m</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc">100m</execute></font color>'
-							+ '<br/>'
+							+ 'MDH CAS Modoptions:'
+							+ '<br/><br/>'
 							+ 'Set Voicelanguage for CAS Strike: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',1,''MDH CAS Voicelanguage always BLUFOR english activated''] call mdhCASBriefingFnc">BLUFOR english</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',2,''MDH CAS Voicelanguage Arma 3 side standard activated''] call mdhCASBriefingFnc">Arma 3 side standard</execute></font color>'
-							//+ '<br/>'
+							//+ '<br/><br/>'
 							//+ 'Use MapMarker with CAS in name for next CAS Strike: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',1,''MDH CAS for MapMarker activated''] call mdhCASBriefingFnc">activate</execute></font color>'
 							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',0,''MDH CAS for MapMarker deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
-							//+ '<br/>'
+							//+ '<br/><br/>'
 							//+ 'Use RedSmoke near player for next CAS Strike: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModSmoke'',1,''MDH CAS RedSmoke activated''] call mdhCASBriefingFnc">activate</execute></font color>'
 							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModSmoke'',0,''MDH CAS RedSmoke deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
-							+ '<br/>'
-							+ 'Set CAS Debug mode: '
+							+ '<br/><br/>'
+							+ 'Set CAS debug mode: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModDebug'',true,''MDH CAS Debug mode activated''] call mdhCASBriefingFnc">activate</execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModDebug'',false,''MDH CAS Debug mode deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
-							+ '<br/>'
-							+ 'Set CAS Actionmenu entry: '
-							+    '<font color="#33CC33"><execute expression = "[''mdhCASModActionmenu'',true,''MDH CAS Actionmenu entry activated''] call mdhCASBriefingFnc">activate</execute></font color>'
-							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModActionmenu'',false,''MDH CAS Actionmenu entry deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
-							+ '<br/>'
-							+ 'Set CAS call mode: '
+							+ '<br/><br/>'
+							+ 'Set CAS actionmenu entry for call: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModActionmenu'',true,''MDH CAS Actionmenu entry for call activated''] call mdhCASBriefingFnc">activate</execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModActionmenu'',false,''MDH CAS Actionmenu entry for call deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set CAS actionmenu entry for save plane: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModActionmenu2'',true,''MDH CAS Actionmenu entry for save plane activated''] call mdhCASBriefingFnc">activate</execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModActionmenu2'',false,''MDH CAS Actionmenu entry for save plane deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set CAS timeout minutes: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',60,''MDH CAS Timeout set to 1 min''] call mdhCASBriefingFnc"> 1 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',180,''MDH CAS Timeout set to 3 min''] call mdhCASBriefingFnc"> 3 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',300,''MDH CAS Timeout set to 5 min''] call mdhCASBriefingFnc"> 5 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',600,''MDH CAS Timeout set to 10 min''] call mdhCASBriefingFnc"> 10 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',900,''MDH CAS Timeout set to 15 min''] call mdhCASBriefingFnc"> 15 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',1200,''MDH CAS Timeout set to 20 min''] call mdhCASBriefingFnc"> 20 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeout'',1800,''MDH CAS Timeout set to 30 min''] call mdhCASBriefingFnc"> 30</execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set CAS arrival time in sec: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',15,''MDH CAS arrival time set to 15 sec''] call mdhCASBriefingFnc"> 15 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',30,''MDH CAS arrival time set to 30 sec''] call mdhCASBriefingFnc"> 30 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',45,''MDH CAS arrival time set to 45 sec''] call mdhCASBriefingFnc"> 45 </execute></font color>'
+							+ ' / in min: '
+							+ '<font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',60,''MDH CAS arrival time set to 1 min''] call mdhCASBriefingFnc"> 1 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',120,''MDH CAS arrival time set to 2 min''] call mdhCASBriefingFnc"> 2 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',180,''MDH CAS arrival time set to 3 min''] call mdhCASBriefingFnc"> 3 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',240,''MDH CAS arrival time set to 4 min''] call mdhCASBriefingFnc"> 4 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',300,''MDH CAS arrival time set to 5 min''] call mdhCASBriefingFnc"> 5 </execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set minDistance to player for CAS target: '
+							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc"> 25m </execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc"> 50m </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc"> 75m </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc"> 100m</execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set behaviour when no red smoke found: '
+							+    '<font color="#CC0000"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',1,''MDH CAS no red smoke abort CAS activated''] call mdhCASBriefingFnc"> abort CAS </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',0,''MDH CAS no red smoke attack nearest taget activated''] call mdhCASBriefingFnc"> attack near target </execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set CAS planetype: '
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',1,''MDH CAS planeType 1 activated''] call mdhCASBriefingFnc"> PLANE 1 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',2,''MDH CAS planeType 2 activated''] call mdhCASBriefingFnc"> PLANE 2 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',3,''MDH CAS planeType 3 activated''] call mdhCASBriefingFnc"> PLANE 3</execute></font color>'
+							+ '<br/><br/>'
+							+ 'Set CAS call mode: <br/>'
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
-							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">red smoke</execute></font color>'
-							//+ '<br/>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">near target red smoke</execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">direct at red smoke</execute></font color>'
+							//+ '<br/><br/>'
 							//+ 'Set CAS item for call: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',0,''MDH CAS item to call set none''] call mdhCASBriefingFnc">none</execute></font color>'
 							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',1,''MDH CAS item to call set UAV Terminal''] call mdhCASBriefingFnc">UAV Terminal</execute></font color>'
 							+ '<br/>'
 							+ '<br/>'
-							+ '<font color="#CC0000" size="20"><execute expression = "[''mdhCASModCallOverModTab'',true,''''] call mdhCASBriefingFnc">&gt;&gt;&gt; CALL MDH CAS &lt;&lt;&lt;</execute></font color>'
+							+ '---------------------------------------------------------------------------------------------------------'
 							+ '<br/>'
+							+ '<font color="#CC0000" size="40"><execute expression = "[''mdhCASModCallOverModTab'',true,''''] call mdhCASBriefingFnc">&gt;&gt;&gt; CALL MDH CAS &lt;&lt;&lt;</execute></font color>'
 							+ '<br/>'
-							+ 'If you have any question you can contact me at the steam workshop page.<br/>'
+							+ '---------------------------------------------------------------------------------------------------------'
+							+ '<br/>'
+							+ 'If you have any question you can contact me at the steam workshop page.'
 							+ '<br/>'
 							+ '<img image="'+(if(isNil"_path")then{""}else{_path})+'\mdhCAS.paa"/>'
 							+ '<br/>'
@@ -167,16 +302,15 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 				if (!isNil"mdhCASModCallerObj5" && {alive mdhCASModCallerObj5}) then {_a pushBackUnique mdhCASModCallerObj5};
 		
 				_f = false;
-				if (count _a == 0) then
+				if (count _a == 0) then {_a = [player]};
 				{
-					_a = [player];
-				};
+					localNameSpace setVariable ["mdhCASAllowedCaller",_a];
+					if !(player in _a) then {profileNameSpace setVariable["mdhCASModActionmenu",true]};
 
-				{
 					_f = false;
 					_b = _x;
 					{
-						if ((_b actionParams _x select 0) find _t >= 0) then
+						if (_t in (_b actionParams _x select 0)) then
 						{
 							_f = true;
 						};																
@@ -194,8 +328,11 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								if (time < 3) exitWith {};
 								_debug = profileNameSpace getVariable ["mdhCASModDebug",false];
 								if (_debug) then {systemChat "MDH CAS Debug mode active"};
-								localNameSpace setVariable['mdhCASModCallTime',time + 60];
+								_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
+								_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
+								localNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
 								if (_debug && {name player == "Moerderhoschi"}) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
+								if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
 								_r = selectRandom [0,1,2];
 								_r = str(_r);
 								_l = "B";
@@ -206,14 +343,19 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								};
 
 								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
-								systemChat "Close Air Support called";
-								if (_debug && {name player == "Moerderhoschi"}) then
+								_counter = 99;
+								for "_i" from 0 to _arrival do
 								{
-									sleep 5;
-								}
-								else
-								{
-									sleep (10 + random 5);
+									_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
+									_limit = if (_arrival > 60 && {_arrival - _i > 60}) then {60} else {15};
+									if (_counter >= _limit && {_arrival - _i > 0}) then
+									{
+										systemChat ("Close Air Support called ETA " + (if (_arrival - _i > 59) then {str((_arrival - _i)/60) + " min"} else {str(_arrival - _i) + " sec"}));
+										_counter = 0;
+									};
+									if (_i > _arrival) exitWith {};
+									_counter = _counter + 1;
+									sleep 1;
 								};
 
 								_t = player;
@@ -224,6 +366,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_v = [];
 								for "_i" from 4 to 30 do {_v pushBack (_i*50)};
 								_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
+								_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
 								if (_debug && {name player == "Moerderhoschi"}) then {_min = 1};
 								_AA = [];
 								_mbt = [];
@@ -238,14 +381,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 								_MapLocation = 0;
 								_markerText = "";
-								if (profileNameSpace getVariable ["mdhCASModCallMode",0] == 1) then
+								if (_callMode == 1) then
 								{
 									_MapLocation = 1;
 									_s = "_USER_DEFINED #" + getPlayerID player;
 									{
-										if (_x find _s != -1) then
+										if (_s in _x) then
 										{
-											if (toLowerANSI(markerText _x) find "cas" != -1) exitWith
+											if ("cas" in toLowerANSI(markerText _x)) exitWith
 											{
 												_MapLocation = 2;
 												_markerText = markerText _x;
@@ -258,7 +401,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									if (_min != 0) then
 									{
 										{
-											if (toLowerANSI(markerText _x) find "cas" != -1) exitWith
+											if ("cas" in toLowerANSI(markerText _x)) exitWith
 											{
 												_MapLocation = 2;
 												_markerText = markerText _x;
@@ -270,20 +413,21 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								};
 
 								_redSmoke = 0;
-								if (profileNameSpace getVariable ["mdhCASModCallMode",0] == 2) then
+								_redSmokeShell = player;
+								if (_callMode in [2,3]) then
 								{
 									_redSmoke = 1;
 									_n = nearestObjects [vehicle player,["SmokeShell"],1000];
 									{
 										_m = toLowerANSI(typeOf _x);
-										//if (_m find "smokered" != -1 OR _m find "shellred" != -1) exitWith
-										if (_m find "red" != -1) exitWith
+										if ("red" in _m) exitWith
 										{
 											_redSmoke = 2;
 											_strikePos = getPos _x;
+											_redSmokeShell = _x;
 											_min = 0;
-											_v = [];
-											for "_i" from 1 to 6 do {_v pushBack (_i*50)};
+											//_v = [];
+											//for "_i" from 1 to 6 do {_v pushBack (_i*50)};
 										};
 									} forEach _n;
 								};
@@ -304,7 +448,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										{
 											_isAA = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "irScanRangeMin") > 600);
 											_isArty = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "artilleryScanner") > 0);
-											_isMBT = (toLowerANSI(typeOf _x) find "mbt") != -1;
+											_isMBT = "mbt" in toLowerANSI(typeOf _x);
 			
 											if (_x isKindOf "LAND" && {_isAA} && {speed _x == 0}) exitWith {_AA pushBack [_x distance _strikePos, _x]};
 											if (_x isKindOf "LAND" && {_isAA} && {speed _x !=  0}) exitWith {_AAmoving pushBack [_x distance _strikePos, _x]};
@@ -340,10 +484,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_t = _units#0#1;
 										};
 									};
+									if (_redSmoke == 2 && {_v >= 300}) exitWith {};
 								} forEach _dist;
 
 								_dist = 500;
-
 								{
 									_f = 1;
 									if (_forEachIndex == 0) then {_f = 2};
@@ -360,19 +504,40 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								} forEach [_AAmoving, _AA, _mbtMoving, _mbt, _tanksMoving, _tanks, _carsMoving, _cars];
 								if (_tM2 == player && {_t isKindOf "TANK" OR _t isKindOf "CAR"}) then {_tM2 = _t};
 
-								if (_t == player or _redSmoke == 1 or _MapLocation == 1) exitWith
+								if ((_callMode == 3 or _callMode == 2 && _t == player) && {_redSmoke == 2} && {_redSmokeShell != player}) then
+								{
+									_redSmokeLogic = "logic" createVehicleLocal getPos _redSmokeShell;
+									_redSmokeLogic setPos getPos _redSmokeShell;
+									_t = _redSmokeLogic;
+									[_redSmokeShell,_redSmokeLogic] spawn
+									{
+										params["_redSmokeShell","_redSmokeLogic"];
+										for "_i" from 1 to 60 do
+										{
+											if !(isNull _redSmokeShell) then
+											{
+												_redSmokeLogic setPos getPos _redSmokeShell;
+											};
+											sleep 1;
+										};
+										deleteVehicle _redSmokeLogic;
+									};
+								};
+
+								if (_t == player or (_redSmoke == 1 && (profileNameSpace getVariable ["mdhCASModNoRedSmokeThenAbort",0] == 1)) or _MapLocation == 1) exitWith
 								{
 									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_"+_l+"HQ_"+_r+".ogg"];
 									systemChat "Close Air Support canceled no valid targets found";
 									_s = "(to close or to far from caller)";
 									if (_MapLocation == 1) then {_s = ("(no map marker with CAS in name found)")};
 									if (_MapLocation == 2) then {_s = ('(no targets found at map marker "' + _markerText + '")')};
-									if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of player found)"};
-									if (_redSmoke == 2) then {_s = "(no targets around 300 meter of red smoke)"};
+									if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
 									systemChat _s;
 									localNameSpace setVariable['mdhCASModCallTime',time + 5];
 								};
-		
+
+								if (_redSmoke == 1) then {systemChat "no red smoke around 1000 meter of caller found"; systemChat "(Attacking nearest Target)"};
+
 								_logic = "logic" createVehicleLocal getPos _t;
 								_logic setPos getPos _t;
 								_logic attachTo [_t,[0,0,0]];
@@ -380,23 +545,24 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_side = "West";
 								if (side group player == east) then {_side = "East"};
 								if (side group player == resistance) then {_side = "Inde"};
-								
-								_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+"1"),["mdhNothing",[],[],[],[]]];
+								_n = profileNameSpace getVariable ["mdhCASModPlaneType",1];
+
+								_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+str(_n)),["mdhNothing",[],[],[],[]]];
 								_planeCamo = _planeClass#1;
 								_planePylon = _planeClass#2;
 								_planeWeapons = _planeClass#3;
 								_planeMagazines = _planeClass#4;
 								_planeClass = _planeClass#0;
 
-								if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
-								{
-									_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+"2"),["mdhNothing",[],[],[],[]]];
-									_planeCamo = _planeClass#1;
-									_planePylon = _planeClass#2;
-									_planeWeapons = _planeClass#3;
-									_planeMagazines = _planeClass#4;
-									_planeClass = _planeClass#0;
-								};
+//if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
+//{
+//	_planeClass = profileNameSpace getVariable [("mdhCASPlane"+_side+"2"),["mdhNothing",[],[],[],[]]];
+//	_planeCamo = _planeClass#1;
+//	_planePylon = _planeClass#2;
+//	_planeWeapons = _planeClass#3;
+//	_planeMagazines = _planeClass#4;
+//	_planeClass = _planeClass#0;
+//};
 
 								if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
 								{
@@ -658,7 +824,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_planeDriver = driver _plane;
 											_tM1 setVehicleTiPars [1, 1, 1];
 											_planeDriver fireattarget [_tM1,_m];
-											_b = nearestObjects [_plane, ["MissileBase"], 15];
+											_b = nearestObjects [_plane, ["MissileBase"], 30];
 											if (count _b == 0) exitWith {};
 											_b = _b#0;
 											_b setMissileTarget _tM1;
@@ -668,7 +834,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											{
 												_tM2 setVehicleTiPars [1, 1, 1];
 												_planeDriver fireattarget [_tM1,_m];
-												_b = nearestObjects [_plane, ["MissileBase"], 15];
+												_b = nearestObjects [_plane, ["MissileBase"], 30];
 												if (count _b == 0) exitWith {};
 												_b = _b#0;
 												_b setMissileTarget _tM2;
@@ -862,7 +1028,7 @@ _b setVelocity [(_v#0) * 1.05,(_v#1) * 1.05,(_v#2)];
 					};
 				} forEach _a;
 				
-				if (isMultiplayer OR {worldName != "VR"}) exitWith {};
+				//if (isMultiplayer OR {worldName != "VR"}) exitWith {};
 				_hoschisCASplaneChangeCode =
 				{
 					params ["_target", "_caller", "_actionId", "_arguments"];
@@ -896,19 +1062,16 @@ _b setVelocity [(_v#0) * 1.05,(_v#1) * 1.05,(_v#2)];
 						_x setVariable ["mdhCASsaveActionSet",true];
 						_b = _x;
 						{
-							_t = "save for MDH CAS side ";
-							//if (_x == 1) then {_t = _t + "west prio 1"};
-							if (_x == 1) then {_t = _t + "west"};
-							if (_x == 2) then {_t = _t + "west prio 2"};
-							if (_x == 3) then {_t = _t + "west prio 3"};
-							//if (_x == 4) then {_t = _t + "east prio 1"};
-							if (_x == 4) then {_t = _t + "east"};
-							if (_x == 5) then {_t = _t + "east prio 2"};
-							if (_x == 6) then {_t = _t + "east prio 3"};
-							//if (_x == 7) then {_t = _t + "independent prio 1"};
-							if (_x == 7) then {_t = _t + "independent"};
-							if (_x == 8) then {_t = _t + "independent prio 2"};
-							if (_x == 9) then {_t = _t + "independent prio 3"};
+							_t = "MDH CAS save for side ";
+							if (_x == 1) then {_t = _t + "west plane 1"};
+							if (_x == 2) then {_t = _t + "west plane 2"};
+							if (_x == 3) then {_t = _t + "west plane 3"};
+							if (_x == 4) then {_t = _t + "east plane 1"};
+							if (_x == 5) then {_t = _t + "east plane 2"};
+							if (_x == 6) then {_t = _t + "east plane 3"};
+							if (_x == 7) then {_t = _t + "independent plane 1"};
+							if (_x == 8) then {_t = _t + "independent plane 2"};
+							if (_x == 9) then {_t = _t + "independent plane 3"};
 							if (_x == 0) then {_t = "MDH CAS clear all saved planes"};
 
 							[
@@ -918,6 +1081,7 @@ _b setVelocity [(_v#0) * 1.05,(_v#1) * 1.05,(_v#2)];
 								,"a3\ui_f_oldman\Data\IGUI\Cfg\HoldActions\holdAction_sleep_ca.paa"
 								,"
 								alive _target 
+								&& {profileNameSpace getVariable ['mdhCASModActionmenu2',true]}
 								&& {_target isKindOf 'PLANE'}
 								&& {_target distance player < 15}
 								&&
@@ -970,7 +1134,7 @@ _b setVelocity [(_v#0) * 1.05,(_v#1) * 1.05,(_v#2)];
 								,false
 								,false
 							] call mdhHoldActionAdd;											
-						} forEach [1, 4, 7, 0];
+						} forEach [1,2,3,4,5,6,7,8,9,0];
 					};
 				} forEach vehicles;
 			};
@@ -978,7 +1142,7 @@ _b setVelocity [(_v#0) * 1.05,(_v#1) * 1.05,(_v#2)];
 
 		if (hasInterface) then
 		{
-			uiSleep 1.9;;
+			uiSleep 1.7;
 			call _diary;
 		};
 
