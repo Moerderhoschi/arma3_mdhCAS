@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-05-14
+// MDH CAS MOD(by Moerderhoschi) - v2025-05-15
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,132 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 		_diary  = 0;
 		_mdhFnc = 0;
+
+		localNameSpace setVariable ["mdhFncCASweapons",
+		{
+			_weaponTypes = ["machinegun","bomblauncher","missilelauncher","rocketlauncher","vehicleweapon","horn","cannon"];
+			_weapons = [];
+			_missilelauncher = [];
+			_weaponsSorted = [0,0,0,0]; // MG,BOMB,ROCKET,NAPALM
+			_weaponsFiltered = [];
+			{
+				if (configname(configfile >> "CfgWeapons" >> _x) == "") then {systemChat (_x + " not found in current loaded mods!")};
+				_type = toLowerANSI((_x call bis_fnc_itemType) select 1);
+				if !(_type in _weaponTypes) then {_weaponsFiltered pushBackUnique _x};
+				if(_type in _weaponTypes) then
+				{
+					if (_x in ["rhs_weap_DummyLauncher","vn_fuel_mig19_launcher"]) exitWith {_weaponsFiltered pushBackUnique _x};
+					_modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
+					if (count _modes == 0) then {_weaponsFiltered pushBackUnique _x};
+					if (count _modes > 0) then
+					{
+						_mode = _modes select 0;
+						if (_mode == "this") then {_mode = _x};
+						_w = _x;
+						{
+							if (configname(configfile >> "CfgMagazines" >> _x) == "" && {!("flare" in toLowerANSI(_x))} && {!("chaff" in toLowerANSI(_x))}) then {systemChat (_x + " not found in current loaded mods!")};
+							if (_x in compatibleMagazines _w) then
+							{
+								_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
+								_irLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "irLock");
+								_canLock = getNumber(configFile >> "CfgWeapons" >> _w >> "canLock");
+								_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
+								_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
+								_laserLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "laserLock");
+								_newSensors = configName(configfile >> "CfgAmmo" >> _ammo >> "Components" >> "SensorsManagerComponent" >> "Components");
+								_autoSeekTarget = getNumber(configFile >> "CfgAmmo" >> _ammo >> "autoSeekTarget");
+
+								if (_ammo isKindOf "BulletBase" OR _ammo isKindOf "SubmunitionBase" && {_type == "machinegun"}) exitWith
+								{
+									_weapons set [count _weapons,[_w,_mode]];
+									if (typename(_weaponsSorted#0)=="SCALAR") then
+									{
+										_weaponsSorted set [0,[[_w,_mode]]];
+									}
+									else
+									{
+										(_weaponsSorted#0) pushBackUnique [_w,_mode];
+									};
+								};
+
+								if (_ammo isKindOf "BombCore") exitWith
+								{
+									_weapons set [count _weapons,[_w,_mode]];
+									if (_w in ["vn_bomb_blu1b_500_fb_launcher","vn_bomb_blu1b_750_fb_launcher"]) exitWith
+									{
+										if (typename(_weaponsSorted#3)=="SCALAR") then
+										{
+											_weaponsSorted set [3,[[_w,_mode]]];
+										}
+										else
+										{
+											(_weaponsSorted#3) pushBackUnique [_w,_mode];
+										};															
+									};
+
+									if (typename(_weaponsSorted#1)=="SCALAR") then
+									{
+										_weaponsSorted set [1,[[_w,_mode]]];
+									}
+									else
+									{
+										(_weaponsSorted#1) pushBackUnique [_w,_mode];
+									};
+								};
+
+								if (_ammo isKindOf "MissileBase" && {_canLock == 0 OR _canLock == 2 && {_newSensors == ""}} && {_airLock == 0} && {_autoSeekTarget == 0} && {_laserLock == 0} && {_irLock == 0}) exitWith
+								{
+									_weapons set [count _weapons,[_w,_mode]];
+									if (typename(_weaponsSorted#2)=="SCALAR") then
+									{
+										_weaponsSorted set [2,[[_w,_mode]]];
+									}
+									else
+									{
+										(_weaponsSorted#2) pushBackUnique [_w,_mode];
+									};
+								};
+
+								//if (_ammo isKindOf "MissileBase" && {_airLock < 2} && {_lockType == 0} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ""}) exitWith
+								if (_ammo isKindOf "MissileBase" && {_canLock == 2} && {_airLock < 2} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ""}) exitWith
+								{
+									_weapons set [count _weapons,[_w,_mode]];
+									_missilelauncher pushBackUnique _w;
+								};
+
+								if (_ammo isKindOf "RocketBase") exitWith
+								{
+									_weapons set [count _weapons,[_w,_mode]];
+									if (typename(_weaponsSorted#2)=="SCALAR") then
+									{
+										_weaponsSorted set [2,[[_w,_mode]]];
+									}
+									else
+									{
+										(_weaponsSorted#2) pushBackUnique [_w,_mode];
+									};
+								};
+								_weaponsFiltered pushBackUnique _w;
+							};
+						} foreach (if (count _planeMagazines == 0) then {(_planeClass call BIS_fnc_magazinesEntityType)} else {_planeMagazines});
+					};
+				};
+			} foreach (if (count _planeWeapons == 0) then {(_planeClass call bis_fnc_weaponsEntityType)} else {_planeWeapons});
+			if (profileNameSpace getVariable ["mdhCASModDebug",false]) then 
+			{
+				hint
+				(
+					"MDH CAS DEBUGINFO"
+					+"\n\nPlane:"+(getText(configfile >> "CfgVehicles" >> _planeClass >> "displayName"))
+					+"\n\nMG:"+(if(typename(_weaponsSorted#0)=="ARRAY")then{_tx=[];{_tx pushBackUnique(_x#0)}forEach(_weaponsSorted#0);str(_tx)}else{""})
+					+"\n\nBOMB:"+(if(typename(_weaponsSorted#1)=="ARRAY")then{_tx=[];{_tx pushBackUnique(_x#0)}forEach(_weaponsSorted#1);str(_tx)}else{""})
+					+"\n\nROCKET:"+(if(typename(_weaponsSorted#2)=="ARRAY")then{_tx=[];{_tx pushBackUnique(_x#0)}forEach(_weaponsSorted#2);str(_tx)}else{""})
+					+"\n\nMISSILE:"+str(_missilelauncher)
+					+"\n\nNAPALM:"+(if(typename(_weaponsSorted#3)=="ARRAY")then{_tx=[];{_tx pushBackUnique(_x#0)}forEach(_weaponsSorted#3);str(_tx)}else{""})
+					+"\n\nFILTER:"+str(_weaponsFiltered)
+				);
+			};
+		}];
 
 		if (hasInterface) then
 		{
@@ -92,69 +218,20 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							_t = getText(configfile >> "CfgVehicles" >> (_a#0) >> "displayName");
 							if (_t == "") exitWith {systemChat ((_a#0)+" not found in current loaded mods!"); systemChat "using Arma 3 standard plane!"};
 
-							_weapons = [];
-							{
-								if (configname(configfile >> "CfgWeapons" >> _x) == "") then {systemChat (_x + " not found in current loaded mods!")};
-								_type = toLowerANSI((_x call bis_fnc_itemType)#1);
-								if(_type in ["machinegun","bomblauncher","missilelauncher","rocketlauncher","vehicleweapon","horn"]) then
-								{
-									_modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
-									if (count _modes > 0) then
-									{
-										if (_type in ["machinegun","bomblauncher","rocketlauncher"]) exitWith {_weapons pushBackUnique _x};
-										if (_type == "missilelauncher") exitWith
-										{
-											_w = _x;
-											{
-												if (configname(configfile >> "CfgMagazines" >> _x) == "" && {!("flare" in toLowerANSI(_x))} && {!("chaff" in toLowerANSI(_x))}) then
-												{
-													systemChat (_x + " not found in current loaded mods!")
-												};
-
-												if (_x in compatibleMagazines _w) then
-												{
-													_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
-													_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
-													if (_ammo isKindOf "MissileBase" && {_airLock < 2}) exitWith {_weapons pushBackUnique _w};													
-												};
-											} forEach (_a#4);
-										};
-
-										_w = _x;
-										{
-											if (_x in compatibleMagazines _w) then
-											{
-												_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
-												if (_ammo isKindOf "BulletCore") exitWith
-												{
-													_weapons pushBackUnique _w;
-												};
-
-												if (_ammo isKindOf "BombCore") exitWith
-												{
-													_weapons pushBackUnique _w;
-												};
-
-												if (_ammo isKindOf "MissileBase") exitWith
-												{
-													_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
-													_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
-													if (_airLock < 2) then {_weapons pushBackUnique _w};
-												};
-											};
-										} forEach (_a#4);
-									};
-								};
-							} foreach (_a#3);
+							_planeClass = _a#0;
+							_planeWeapons = _a#3;
+							_planeMagazines = _a#4;
+							_weapons = 0;
+							call (localNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
 
 							_w = [];
 							{
-								_tx = getText(configfile >> "CfgWeapons" >> _x >> "displayName");							
+								_tx = getText(configfile >> "CfgWeapons" >> (_x#0) >> "displayName");							
 								_w pushBackUnique _tx;
 							} forEach _weapons;
 
 							{
-								if (_x != "") then {_t = _t + " , " + _x};
+								if (_x != "") then {_t = _t + " /// " + _x};
 							} forEach _w;
 							systemChat _t;
 						};
@@ -172,9 +249,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ '<br/>'
 							+ 'MDH CAS Modoptions:'
 							+ '<br/><br/>'
-							+ 'Set Voicelanguage for CAS Strike: '
+							+ 'Set language for CAS Strike: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',1,''MDH CAS Voicelanguage always BLUFOR english activated''] call mdhCASBriefingFnc">BLUFOR english</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',2,''MDH CAS Voicelanguage Arma 3 side standard activated''] call mdhCASBriefingFnc">Arma 3 side standard</execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModVoicelanguage'',0,''MDH CAS Voicelanguage deactivated''] call mdhCASBriefingFnc">deact</execute></font color>'
 							//+ '<br/><br/>'
 							//+ 'Use MapMarker with CAS in name for next CAS Strike: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',1,''MDH CAS for MapMarker activated''] call mdhCASBriefingFnc">activate</execute></font color>'
@@ -333,7 +411,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									if (side group player == resistance) then {_l = "I"};
 								};
 
-								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
+								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
+								{
+									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
+								};
 								_counter = 99;
 								for "_i" from 0 to _arrival do
 								{
@@ -517,7 +598,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 								if (_t == player or (_redSmoke == 1 && (profileNameSpace getVariable ["mdhCASModNoRedSmokeThenAbort",0] == 1)) or _MapLocation == 1) exitWith
 								{
-									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_"+_l+"HQ_"+_r+".ogg"];
+									if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
+									{
+										playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_"+_l+"HQ_"+_r+".ogg"];
+									};
 									systemChat "Close Air Support canceled no valid targets found";
 									_s = "(to close or to far from caller)";
 									if (_MapLocation == 1) then {_s = ("(no map marker with CAS in name found)")};
@@ -559,102 +643,17 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_planeCfg = configfile >> "cfgvehicles" >> _planeClass;
 								if !(isclass _planeCfg) exitwith {["Vehicle class '%1' not found",_planeClass] call bis_fnc_error; false};
 
-								_weaponTypes = ["machinegun","bomblauncher","missilelauncher","rocketlauncher","vehicleweapon","horn"];
-								_weapons = [];
-								_missilelauncher = [];
-								_weaponsSorted = [0,0,0,0];
-								{
-									_type = toLowerANSI((_x call bis_fnc_itemType) select 1);
-									if(_type in _weaponTypes) then
-									{
-										_modes = getarray (configfile >> "cfgweapons" >> _x >> "modes");
-										if (count _modes > 0) then
-										{
-											_mode = _modes select 0;
-											if (_mode == "this") then {_mode = _x};
-											if (_type in ["machinegun","bomblauncher","missilelauncher","rocketlauncher"]) then {_weapons set [count _weapons,[_x,_mode]]};
-
-											if (_type == "machinegun" && {typename(_weaponsSorted#0)=="SCALAR"}) exitWith {_weaponsSorted set [0,[[_x,_mode]]]};
-											if (_type == "machinegun") exitWith {(_weaponsSorted#0) pushBackUnique [_x,_mode]};
-
-											if (_type == "bomblauncher" && {_x in ["vn_bomb_blu1b_500_fb_launcher","vn_bomb_blu1b_750_fb_launcher"]} && {typename(_weaponsSorted#3)=="SCALAR"}) exitWith {_weaponsSorted set [3,[[_x,_mode]]]};
-											if (_type == "bomblauncher" && {_x in ["vn_bomb_blu1b_500_fb_launcher","vn_bomb_blu1b_750_fb_launcher"]}) exitWith {(_weaponsSorted#3) pushBackUnique [_x,_mode]};
-											
-											if (_type == "bomblauncher" && {typename(_weaponsSorted#1)=="SCALAR"}) exitWith {_weaponsSorted set [1,[[_x,_mode]]]};
-											if (_type == "bomblauncher") exitWith {(_weaponsSorted#1) pushBackUnique [_x,_mode]};
-
-											if (_type == "rocketlauncher" && {typename(_weaponsSorted#2)=="SCALAR"}) exitWith {_weaponsSorted set [2,[[_x,_mode]]]};
-											if (_type == "rocketlauncher") exitWith {(_weaponsSorted#2) pushBackUnique [_x,_mode]};
-
-											if (_type == "missilelauncher") exitWith {_missilelauncher pushBackUnique _x};
-
-											_w = _x;
-											{
-												if (_x in compatibleMagazines _w) then
-												{
-													_ammo = gettext(configfile >> "CfgMagazines" >> _x >> "ammo");
-													_irLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "irLock");
-													_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
-													_canLock = getNumber(configfile >> "CfgWeapons" >> _w >> "canLock");
-													_laserLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "laserLock");
-													_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
-													_autoSeekTarget = getNumber(configFile >> "CfgAmmo" >> _ammo >> "autoSeekTarget");
-													_newSensors = configName(configfile >> "CfgAmmo" >> _ammo >> "Components" >> "SensorsManagerComponent" >> "Components");
-
-													if (_ammo isKindOf "BulletCore") exitWith
-													{
-														_weapons set [count _weapons,[_w,_mode]];
-														if (typename(_weaponsSorted#0)=="SCALAR") then
-														{
-															_weaponsSorted set [0,[[_w,_mode]]];
-														}
-														else
-														{
-															(_weaponsSorted#0) pushBackUnique [_w,_mode];
-														};
-													};
-
-													if (_ammo isKindOf "BombCore") exitWith
-													{
-														_weapons set [count _weapons,[_w,_mode]];
-														if (typename(_weaponsSorted#1)=="SCALAR") then
-														{
-															_weaponsSorted set [1,[[_w,_mode]]];
-														}
-														else
-														{
-															(_weaponsSorted#1) pushBackUnique [_w,_mode];
-														};
-													};
-
-													if (_ammo isKindOf "MissileBase" && {_airLock == 0} && {_autoSeekTarget == 0} && {_laserLock == 0} && {_irLock == 0} && {_newSensors == ""}) exitWith
-													{
-														_weapons set [count _weapons,[_w,_mode]];
-														if (typename(_weaponsSorted#2)=="SCALAR") then
-														{
-															_weaponsSorted set [2,[[_w,_mode]]];
-														}
-														else
-														{
-															(_weaponsSorted#2) pushBackUnique [_w,_mode];
-														};
-													};													
-
-													if (_ammo isKindOf "MissileBase" && {_airLock < 2} && {_lockType == 0} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ""}) exitWith
-													{
-														_weapons set [count _weapons,[_w,_mode]];
-														_missilelauncher pushBackUnique _w;
-													};
-												};
-											} forEach _planeMagazines;
-										};
-									};
-								} foreach (if (count _planeWeapons == 0) then {(_planeClass call bis_fnc_weaponsEntityType)} else {_planeWeapons});
+								_weaponTypes = 0;
+								_weapons = 0;
+								_missilelauncher = 0;
+								_weaponsSorted = 0;
+								call (localNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
 								if (count _weapons == 0) exitwith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
 
 								//systemChat str(_weapons);
 								_weapons = _weaponsSorted;
 								//systemChat str(_weapons + _missilelauncher);
+								//hint str(_missilelauncher);
 
 								_posATL = getposATL _logic;
 								_pos = +_posATL;
@@ -694,7 +693,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_planePos set [2,(_pos#2) + _alt];
 								_logic setDir _dir;
 		
-								playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\50_Cas\mp_groundsupport_50_cas_"+_l+"HQ_"+_r+".ogg"];
+								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
+								{
+									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\50_Cas\mp_groundsupport_50_cas_"+_l+"HQ_"+_r+".ogg"];
+								};
 								_s = "Close Air Support incomming";
 								if (_MapLocation == 2) then {_s = ('Close Air Support incomming on map marker "' + _markerText + '"')};
 								if (_redSmoke == 2) then {_s = "Close Air Support incomming on red smoke"};
@@ -839,17 +841,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 															_ammoCount = getNumber(configFile >> "CfgMagazines" >> _x >> "count");
 															if (_ammo isKindOf "MissileBase") then
 															{
-																_irLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "irLock");
-																_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
-																_canLock = getNumber(configfile >> "CfgWeapons" >> _w >> "canLock");
+																//_irLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "irLock");
+																//_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
 																_laserLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "laserLock");
-																_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
-																_autoSeekTarget = getNumber(configFile >> "CfgAmmo" >> _ammo >> "autoSeekTarget");
-																_newSensors = configName(configfile >> "CfgAmmo" >> _ammo >> "Components" >> "SensorsManagerComponent" >> "Components");
-																if (_airLock < 2 && {_lockType == 0} && {_laserLock == _i} && {_autoSeekTarget == 1 OR _irLock == 1 OR _newSensors != ""}) then
-																{
-																	for "_i2" from 1 to _ammoCount do {_m pushBack _w};
-																};
+																//_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
+																//_autoSeekTarget = getNumber(configFile >> "CfgAmmo" >> _ammo >> "autoSeekTarget");
+																//_newSensors = configName(configfile >> "CfgAmmo" >> _ammo >> "Components" >> "SensorsManagerComponent" >> "Components");
+																//if (_airLock < 2 && {_lockType == 0} && {_laserLock == _i} && {_autoSeekTarget == 1 OR _irLock == 1 OR _newSensors != ""}) then
+																if (_laserLock == _i) then {for "_i2" from 1 to _ammoCount do {_m pushBack _w}};
 															};
 														};
 													} forEach magazines _plane;
@@ -929,9 +928,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												} foreach _machinegun;
 												_specialWeapsGo = 400;
 												_pullUp = 250;
-												if (count _rocketlauncher > 0 && {"RHS_A10" in typeof _plane OR "CUP_B_A10" in typeof _plane}) then {_specialWeapsGo = 200; _pullUp = 130};
+												if (count _rocketlauncher > 0 && {"RHS_A10" in typeof _plane OR "CUP_B_A10" in typeof _plane OR "SPE_P47" in typeof _plane}) then {_specialWeapsGo = 220; _pullUp = 130};
 												if ((getPos _plane #2) < _specialWeapsGo) then {{_planeDriver fireattarget [_target,(_x#0)]} foreach _rocketlauncher};
-												//if (count _napalmlauncher > 0) then {_specialWeapsGo = 200; _pullUp = 130};
+//if (count _napalmlauncher > 0) then {_specialWeapsGo = 200; _pullUp = 130};
 												if ((getPos _plane #2) < _specialWeapsGo) then {
 												{
 													_planeDriver fireattarget [_target,(_x#0)];
@@ -1008,7 +1007,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												time > _time || (getPos _plane #2) < _pullUp || isnull _plane || damage _plane > 0.2
 											};
 											sleep 1;
-//[_planeDriver,_target,_napalmlauncher]spawn{params["_planeDriver","_target","_napalmlauncher"];sleep 1.5;for "_i" from 1 to 20 do{{_planeDriver fireattarget [_target,(_x#0)]} foreach _napalmlauncher;sleep 0.1}};
 										};
 									};
 							
@@ -1150,46 +1148,11 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								&& {_target distance player < 15}
 								&&
 								{
-									_weaponTypes = ['machinegun','bomblauncher','missilelauncher','rocketlauncher','vehicleweapon','horn'];
 									_weapons = [];
-									{
-										_type = toLowerANSI((_x call bis_fnc_itemType) select 1);
-										if(_type in _weaponTypes) then
-										{
-											_modes = getarray (configfile >> 'cfgweapons' >> _x >> 'modes');
-											if (count _modes > 0) then
-											{
-												_mode = _modes select 0;
-												if (_mode == 'this') then {_mode = _x};
-												if (_type in ['machinegun','bomblauncher','missilelauncher','rocketlauncher']) then {_weapons set [count _weapons,[_x,_mode]]};
-	
-												_w = _x;
-												{
-													if (_x in compatibleMagazines _w) then
-													{
-														_ammo = gettext(configfile >> 'CfgMagazines' >> _x >> 'ammo');
-														_irLock = getNumber(configFile >> 'CfgAmmo' >> _ammo >> 'irLock');
-														_airLock  = getNumber(configFile >> 'CfgAmmo' >> _ammo >> 'airLock');
-														_canLock = getNumber(configfile >> 'CfgWeapons' >> _w >> 'canLock');
-														_laserLock = getNumber(configFile >> 'CfgAmmo' >> _ammo >> 'laserLock');
-														_lockType = getNumber(configFile >> 'CfgAmmo' >> _ammo >> 'lockType');
-														_autoSeekTarget = getNumber(configFile >> 'CfgAmmo' >> _ammo >> 'autoSeekTarget');
-														_newSensors = configName(configfile >> 'CfgAmmo' >> _ammo >> 'Components' >> 'SensorsManagerComponent' >> 'Components');
-	
-														if (_ammo isKindOf 'BulletCore') exitWith {_weapons set [count _weapons,[_w,_mode]]};
-	
-														if (_ammo isKindOf 'BombCore') exitWith {_weapons set [count _weapons,[_w,_mode]]};
-	
-														if (_ammo isKindOf 'MissileBase' && {_airLock == 0} && {_autoSeekTarget == 0} && {_laserLock == 0} && {_irLock == 0} && {_newSensors == ''}) exitWith
-														{_weapons set [count _weapons,[_w,_mode]]};
-	
-														if (_ammo isKindOf 'MissileBase' && {_airLock < 2} && {_lockType == 0} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ''}) exitWith
-														{_weapons set [count _weapons,[_w,_mode]]};
-													};
-												} forEach magazines _target;;
-											};
-										};
-									} foreach (weapons _target);
+									_planeClass = typeOf _target;
+									_planeWeapons = weapons _target;
+									_planeMagazines = magazines _target;
+									call (localNameSpace getVariable ['mdhFncCASweapons',{systemChat 'mdhFncCASweapons not found!'}]);
 									count _weapons > 0
 								}
 								"
@@ -1260,4 +1223,25 @@ if (hasInterface) then
 	_newFNC = _newFNC + "GenCoder8_fixHoldActTimer";
 	_newFNC = _newFNC + ([_origFNC, "bis_fnc_holdAction_animationTimerCode", true] call BIS_fnc_splitString)#2;
 	mdhHoldActionAdd = compile _newFNC;
+};
+
+if (true) exitWith {};
+// debug stuff
+if (false) then {
+_i=9;
+if(isnull cursorObject)exitWith{};
+_w=weapons cursorObject;
+_m=magazines cursorObject;
+_a=[];
+{if(_x in compatibleMagazines (_w#_i))then{_ammo=(configfile>>"CfgMagazines">>_x>>"ammo");
+_ammo=(configfile>>"CfgAmmo">>getText _ammo);
+_a pushBack [_x,[_ammo,true] call BIS_fnc_returnParents,
+"airLock:"+str(getNumber(configFile>>"CfgAmmo">>configname _ammo>>"airLock")),
+"lockType:"+str(getNumber(configFile>>"CfgAmmo">>configname _ammo>>"lockType")),
+"autoSeekTarget:"+str(getNumber(configFile>>"CfgAmmo">>configname _ammo>>"autoSeekTarget")),
+"irLock:"+str(getNumber(configFile>>"CfgAmmo">>configname _ammo>>"irLock")),
+"laserLock:"+str(getNumber(configFile>>"CfgAmmo">>configname _ammo>>"laserLock")),
+"newSensors:"+(configName(configFile>>"CfgAmmo">>configname _ammo>>"Components">>"SensorsManagerComponent">>"Components")),
+"<-"+str(count _a)+"/"]}}forEach _m;[_w#_i,"canLock:"+str(getNumber(configfile>>"CfgWeapons">>_w#_i>>"canLock")),
+(_w#_i)call bis_fnc_itemType,getarray(configfile>>"cfgweapons">>_w#_i>>"modes"),_a]
 };
