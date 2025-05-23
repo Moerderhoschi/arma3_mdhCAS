@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-05-15
+// MDH CAS MOD(by Moerderhoschi) - v2025-05-23
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 			} foreach (if (count _planeWeapons == 0) then {(_planeClass call bis_fnc_weaponsEntityType)} else {_planeWeapons});
 			if (profileNameSpace getVariable ["mdhCASModDebug",false]) then 
 			{
-				hint
+				hintSilent
 				(
 					"MDH CAS DEBUGINFO"
 					+"\n\nPlane:"+(getText(configfile >> "CfgVehicles" >> _planeClass >> "displayName"))
@@ -243,7 +243,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3.<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-05-23)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -294,11 +294,12 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',240,''MDH CAS arrival time set to 4 min''] call mdhCASBriefingFnc"> 4 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',300,''MDH CAS arrival time set to 5 min''] call mdhCASBriefingFnc"> 5 </execute></font color>'
 							+ '<br/><br/>'
-							+ 'Set minDistance to player for CAS target: '
-							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc"> 25m </execute></font color>'
-							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc"> 50m </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc"> 75m </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc"> 100m</execute></font color>'
+							+ 'Set minDistance to player for CAS target in meter: '
+							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc"> 25 </execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc"> 50 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc"> 100 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',150,''MDH CAS min distance set to 150 meter''] call mdhCASBriefingFnc"> 150 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',200,''MDH CAS min distance set to 200 meter''] call mdhCASBriefingFnc"> 200</execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set behaviour when no red smoke found: '
 							+    '<font color="#CC0000"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',1,''MDH CAS no red smoke abort CAS activated''] call mdhCASBriefingFnc"> abort CAS </execute></font color>'
@@ -632,12 +633,33 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								if !(isclass(configfile >> "cfgvehicles" >> _planeClass)) then
 								{
 									_planeCamo = [];
-									_planePylon = [];
-									_planeWeapons = [];
-									_planeMagazines = [];
-									_planeClass = "B_Plane_CAS_01_F";
-									if (side group player == east) then {_planeClass = "O_Plane_CAS_02_F"};
-									if (side group player == resistance) then {_planeClass = "I_Plane_Fighter_03_CAS_F"};
+									//_planePylon = [];
+									//_planeWeapons = [];
+									//_planeMagazines = [];
+									//_planeClass = "B_Plane_CAS_01_F";
+									//if (side group player == east) then {_planeClass = "O_Plane_CAS_02_F"};
+									//if (side group player == resistance) then {_planeClass = "I_Plane_Fighter_03_CAS_F"};
+
+									_planeClass = "B_Plane_CAS_01_dynamicLoadout_F";
+									_planePylon = [[1,"Pylons1",[-1],"PylonRack_7Rnd_Rocket_04_HE_F",7,"0:10001270",[[6.53854,0.566696,-0.277049],[-0,-1,0],[-0,-0,1]]],[2,"Pylons2",[-1],"PylonRack_7Rnd_Rocket_04_AP_F",7,"0:10001271",[[5.35845,0.665939,-0.45968],[-0,-1,0],[-0,-0,1]]],[3,"Pylons3",[-1],"PylonMissile_1Rnd_BombCluster_01_F",1,"0:10001273",[[4.14074,0.654476,-0.615896],[-0,-1,0],[-0,-0,1]]],[4,"Pylons4",[-1],"PylonRack_1Rnd_Missile_AGM_02_F",1,"0:10001274",[[1.78969,0.670163,-0.789496],[-0,-1,0],[-0,-0,1]]],[5,"Pylons5",[-1],"PylonRack_7Rnd_Rocket_04_HE_F",7,"0:10001275",[[0.65753,0.670163,-0.80346],[-0,-1,0],[-0,-0,1]]],[6,"Pylons6",[-1],"PylonRack_7Rnd_Rocket_04_HE_F",7,"0:10001276",[[-0.641189,0.670163,-0.806879],[-0,-1,0],[-0,-0,1]]],[7,"Pylons7",[-1],"PylonRack_1Rnd_Missile_AGM_02_F",1,"0:10001277",[[-1.76817,0.670163,-0.787626],[-0,-1,0],[-0,-0,1]]],[8,"Pylons8",[-1],"PylonMissile_1Rnd_Bomb_04_F",1,"0:10001278",[[-4.12668,0.654476,-0.611977],[-0,-1,0],[-0,-0,1]]],[9,"Pylons9",[-1],"PylonRack_7Rnd_Rocket_04_AP_F",7,"0:10001279",[[-5.33928,0.665939,-0.46261],[-0,-1,0],[-0,-0,1]]],[10,"Pylons10",[-1],"PylonRack_7Rnd_Rocket_04_HE_F",7,"0:10001280",[[-6.52269,0.566696,-0.278784],[-0,-1,0],[-0,-0,1]]]];
+									_planeWeapons = ["Gatling_30mm_Plane_CAS_01_F","Laserdesignator_pilotCamera","CMFlareLauncher","Rocket_04_HE_Plane_CAS_01_F","Missile_AGM_02_Plane_CAS_01_F","Bomb_04_Plane_CAS_01_F","Rocket_04_AP_Plane_CAS_01_F","BombCluster_01_F"];
+									_planeMagazines = ["1000Rnd_Gatling_30mm_Plane_CAS_01_F","Laserbatteries","120Rnd_CMFlare_Chaff_Magazine","PylonRack_7Rnd_Rocket_04_HE_F","PylonRack_7Rnd_Rocket_04_AP_F","PylonMissile_1Rnd_BombCluster_01_F","PylonRack_1Rnd_Missile_AGM_02_F","PylonRack_7Rnd_Rocket_04_HE_F","PylonRack_7Rnd_Rocket_04_HE_F","PylonRack_1Rnd_Missile_AGM_02_F","PylonMissile_1Rnd_Bomb_04_F","PylonRack_7Rnd_Rocket_04_AP_F","PylonRack_7Rnd_Rocket_04_HE_F"];
+									
+									if (side group player == east) then
+									{
+										_planeClass = "O_Plane_CAS_02_dynamicLoadout_F";
+										_planePylon = [[1,"Pylons1",[-1],"PylonMissile_1Rnd_LG_scalpel",1,"0:10001271",[[6.37092,-2.62643,-1.36961],[-0,-1,0],[-0,-0,1]]],[2,"Pylons2",[-1],"PylonRack_20Rnd_Rocket_03_HE_F",20,"0:10001272",[[5.34636,-2.37923,-1.66239],[-0,-1,0],[-0,-0,1]]],[3,"Pylons3",[-1],"PylonRack_20Rnd_Rocket_03_AP_F",20,"0:10001273",[[4.30098,-1.63516,-1.60637],[-0,-1,0],[-0,-0,1]]],[4,"Pylons4",[-1],"PylonRack_20Rnd_Rocket_03_HE_F",20,"0:10001274",[[3.2575,-1.16712,-1.60761],[-0,-1,0],[-0,-0,1]]],[5,"Pylons5",[-1],"PylonMissile_1Rnd_BombCluster_02_cap_F",1,"0:10001276",[[2.23013,-0.662919,-1.57773],[-0,-1,0],[-0,-0,1]]],[6,"Pylons6",[-1],"PylonMissile_1Rnd_Bomb_03_F",1,"0:10001277",[[-2.22577,-0.662919,-1.57773],[-0,-1,0],[-0,-0,1]]],[7,"Pylons7",[-1],"PylonRack_20Rnd_Rocket_03_HE_F",20,"0:10001278",[[-3.25315,-1.16712,-1.60761],[-0,-1,0],[-0,-0,1]]],[8,"Pylons8",[-1],"PylonRack_20Rnd_Rocket_03_AP_F",20,"0:10001279",[[-4.29663,-1.63516,-1.60637],[-0,-1,0],[-0,-0,1]]],[9,"Pylons9",[-1],"PylonRack_20Rnd_Rocket_03_HE_F",20,"0:10001280",[[-5.34201,-2.37923,-1.66239],[-0,-1,0],[-0,-0,1]]],[10,"Pylons10",[-1],"PylonMissile_1Rnd_LG_scalpel",1,"0:10001281",[[-6.36657,-2.62643,-1.36961],[-0,-1,0],[-0,-0,1]]]];
+										_planeWeapons = ["Cannon_30mm_Plane_CAS_02_F","Laserdesignator_pilotCamera","CMFlareLauncher","Rocket_03_HE_Plane_CAS_02_F","Bomb_03_Plane_CAS_02_F","Rocket_03_AP_Plane_CAS_02_F","missiles_SCALPEL","BombCluster_02_F"];
+										_planeMagazines = ["500Rnd_Cannon_30mm_Plane_CAS_02_F","Laserbatteries","120Rnd_CMFlare_Chaff_Magazine","PylonMissile_1Rnd_LG_scalpel","PylonRack_20Rnd_Rocket_03_HE_F","PylonRack_20Rnd_Rocket_03_AP_F","PylonRack_20Rnd_Rocket_03_HE_F","PylonMissile_1Rnd_BombCluster_02_cap_F","PylonMissile_1Rnd_Bomb_03_F","PylonRack_20Rnd_Rocket_03_HE_F","PylonRack_20Rnd_Rocket_03_AP_F","PylonRack_20Rnd_Rocket_03_HE_F","PylonMissile_1Rnd_LG_scalpel"];
+									};
+
+									if (side group player == resistance) then 
+									{
+										_planeClass = "I_Plane_Fighter_03_dynamicLoadout_F";
+										_planePylon = [[1,"Pylons1",[-1],"PylonRack_1Rnd_Missile_AA_04_F",1,"0:10001263",[[3.5543,-0.618341,-1.4382],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]],[2,"Pylons2",[-1],"PylonRack_1Rnd_LG_scalpel",1,"0:10001264",[[2.80474,-0.546924,-1.59068],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]],[3,"Pylons3",[-1],"PylonMissile_1Rnd_BombCluster_01_F",1,"0:10001266",[[2.06158,-0.546924,-1.59068],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]],[4,"Pylons4",[-1],"PylonWeapon_300Rnd_20mm_shells",300,"0:10001267",[[0.0391688,0.83876,-1.56742],[3.72529e-09,-0.999967,-0.00818288],[-6.62664e-16,-0.00818288,0.999967]]],[5,"Pylons5",[-1],"PylonMissile_1Rnd_Bomb_04_F",1,"0:10001268",[[-2.01977,-0.546924,-1.59068],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]],[6,"Pylons6",[-1],"PylonRack_1Rnd_LG_scalpel",1,"0:10001269",[[-2.76284,-0.546924,-1.59068],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]],[7,"Pylons7",[-1],"PylonRack_1Rnd_Missile_AA_04_F",1,"0:10001270",[[-3.50268,-0.618341,-1.4382],[-0,-0.99863,0.052336],[-0,0.052336,0.99863]]]];
+										_planeWeapons = ["CMFlareLauncher","missiles_SCALPEL","Bomb_04_Plane_CAS_01_F","Twin_Cannon_20mm_gunpod","Missile_AA_04_Plane_CAS_01_F","BombCluster_01_F"];
+										_planeMagazines = ["120Rnd_CMFlare_Chaff_Magazine","PylonRack_1Rnd_Missile_AA_04_F","PylonRack_1Rnd_LG_scalpel","PylonMissile_1Rnd_BombCluster_01_F","PylonWeapon_300Rnd_20mm_shells","PylonMissile_1Rnd_Bomb_04_F","PylonRack_1Rnd_LG_scalpel","PylonRack_1Rnd_Missile_AA_04_F"];
+									};
 								};
 
 								_planeCfg = configfile >> "cfgvehicles" >> _planeClass;
@@ -645,7 +667,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 								_weaponTypes = 0;
 								_weapons = 0;
-								_missilelauncher = 0;
+								_missilelauncher = [];
 								_weaponsSorted = 0;
 								call (localNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
 								if (count _weapons == 0) exitwith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
@@ -653,7 +675,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								//systemChat str(_weapons);
 								_weapons = _weaponsSorted;
 								//systemChat str(_weapons + _missilelauncher);
-								//hint str(_missilelauncher);
+								//systemChat str(_missilelauncher);
 
 								_posATL = getposATL _logic;
 								_pos = +_posATL;
@@ -742,6 +764,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										_planePos = _thisArgs#4;
 										_logic = _thisArgs#5;
 										_h = _thisArgs#6;
+										_w = _thisArgs#7;
+										_m = _thisArgs#8;
 										
 										drawLine3D [getPos _plane, getPos _logic, [1,0,0,1],10];
 										_tmpPos = +_planePos;
@@ -750,18 +774,22 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										{
 											if (alive _x) then
 											{
+												if (_x == player) exitWith {};
 												_color = [1,0,0,1];
 												_tSize = 0.032;
 												_pos = unitAimPositionVisual _x;
 												_s = "";
-												if (_x == _t) then {_s = _s + "Bomb"};
+												if (_x == _t &&{typename(_w#0)=="SCALAR"}&&{typename(_w#1)=="SCALAR"}&&{typename(_w#2)=="SCALAR"}&&{typename(_w#3)=="SCALAR"}) exitWith {};
+												if (_x == _t) then {_s = _s + "Target"};
+												if (_x == _tM1 &&{count _m==0}) exitWith {};
 												if (_x == _tM1) then {_s = _s + " AGM1"};
+												if (_x == _tM2 && {count _m==0}) exitWith {};
 												if (_x == _tM2) then {_s = _s + " AGM2"};
 												if (_x == _plane) then {_s = "CAS Plane"; _color = [0,0,0.5,1]};
 												drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", _color, _pos, 1, 1, 0,_s, 1, _tSize];
 											}
 										} forEach [_t,_tM1,_tM2,_plane];
-									},[_t,_tM1,_tM2,_plane,_planePos,_logic,_h]];
+									},[_t,_tM1,_tM2,_plane,_planePos,_logic,_h,_weaponsSorted,_missilelauncher]];
 									[_eh,_plane]spawn{params["_eh","_plane"];_time = time + 35; waitUntil{sleep 1; time > _time or !alive _plane};removeMissionEventHandler["Draw3D",_eh]};
 								};
 		
@@ -841,13 +869,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 															_ammoCount = getNumber(configFile >> "CfgMagazines" >> _x >> "count");
 															if (_ammo isKindOf "MissileBase") then
 															{
-																//_irLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "irLock");
-																//_airLock  = getNumber(configFile >> "CfgAmmo" >> _ammo >> "airLock");
 																_laserLock = getNumber(configFile >> "CfgAmmo" >> _ammo >> "laserLock");
-																//_lockType = getNumber(configFile >> "CfgAmmo" >> _ammo >> "lockType");
-																//_autoSeekTarget = getNumber(configFile >> "CfgAmmo" >> _ammo >> "autoSeekTarget");
-																//_newSensors = configName(configfile >> "CfgAmmo" >> _ammo >> "Components" >> "SensorsManagerComponent" >> "Components");
-																//if (_airLock < 2 && {_lockType == 0} && {_laserLock == _i} && {_autoSeekTarget == 1 OR _irLock == 1 OR _newSensors != ""}) then
 																if (_laserLock == _i) then {for "_i2" from 1 to _ammoCount do {_m pushBack _w}};
 															};
 														};
@@ -928,7 +950,12 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												} foreach _machinegun;
 												_specialWeapsGo = 400;
 												_pullUp = 250;
-												if (count _rocketlauncher > 0 && {"RHS_A10" in typeof _plane OR "CUP_B_A10" in typeof _plane OR "SPE_P47" in typeof _plane}) then {_specialWeapsGo = 220; _pullUp = 130};
+												if (count _rocketlauncher > 0 && {
+														"RHS_A10" in typeof _plane 
+														OR "CUP_B_A10" in typeof _plane 
+														OR "SPE_P47" in typeof _plane
+														OR _plane isKindOf "Plane_Fighter_03_base_F"
+												}) then {_specialWeapsGo = 220; _pullUp = 130};
 												if ((getPos _plane #2) < _specialWeapsGo) then {{_planeDriver fireattarget [_target,(_x#0)]} foreach _rocketlauncher};
 //if (count _napalmlauncher > 0) then {_specialWeapsGo = 200; _pullUp = 130};
 												if ((getPos _plane #2) < _specialWeapsGo) then {
@@ -1229,10 +1256,11 @@ if (true) exitWith {};
 // debug stuff
 if (false) then {
 _i=9;
-if(isnull cursorObject)exitWith{};
+if !(cursorObject isKindOf "plane")exitWith{};
 _w=weapons cursorObject;
 _m=magazines cursorObject;
 _a=[];
+if(count _w>_i)then{_i=(count _w)};
 {if(_x in compatibleMagazines (_w#_i))then{_ammo=(configfile>>"CfgMagazines">>_x>>"ammo");
 _ammo=(configfile>>"CfgAmmo">>getText _ammo);
 _a pushBack [_x,[_ammo,true] call BIS_fnc_returnParents,
