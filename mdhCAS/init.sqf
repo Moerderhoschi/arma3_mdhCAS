@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-05-23
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-03
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12,8 +12,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		_path = 'mdhCAS';
 		_env  = hasInterface;
 
-		_diary  = 0;
-		_mdhFnc = 0;
+		_diary   = 0;
+		_mdhFnc  = 0;
+		call compile preprocessFileLineNumbers "mdhCAS\mdhBlackfishAI.sqf";
 
 		localNameSpace setVariable ["mdhFncCASweapons",
 		{
@@ -165,7 +166,16 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 					{
 						if (_this#0 == "mdhCASModCallOverModTab") exitWith
 						{
-							_code = localNameSpace getVariable["mdhCASCode",0];
+							_code = 0;
+							if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] == 0) then
+							{
+								_code = localNameSpace getVariable["mdhCASCode",0];
+							}
+							else
+							{
+								_code = localNameSpace getVariable["mdhCASCodeBlackfish",0];
+							};
+
 							if (typename _code == "SCALAR") exitWith {systemChat "mdhCASCode not found"};
 							if !(player in (localNameSpace getVariable ["mdhCASAllowedCaller",[]])) exitWith {systemChat "player not in allowed MDH CAS caller"};
 							_f = if (!isNil'mdhCASModNeededItemToCall')then
@@ -210,29 +220,37 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							};
 						};
 
-						if (_this#0 == "mdhCASModPlaneType") then
+						if ((_this#0) == "mdhCASModPlaneType") then
 						{
-							_a = (profileNameSpace getVariable [("mdhCASPlane" + str(side group player) + str(_this#1)),0]);
-							if (typename _a == "SCALAR") exitWith {systemChat "no saved planeconfig found!"; systemChat "using Arma 3 standard plane!"};
-
-							_t = getText(configfile >> "CfgVehicles" >> (_a#0) >> "displayName");
-							if (_t == "") exitWith {systemChat ((_a#0)+" not found in current loaded mods!"); systemChat "using Arma 3 standard plane!"};
-
-							_planeClass = _a#0;
-							_planeWeapons = _a#3;
-							_planeMagazines = _a#4;
-							_weapons = 0;
-							call (localNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
-
-							_w = [];
+							if ((_this#1) == 9) then
 							{
-								_tx = getText(configfile >> "CfgWeapons" >> (_x#0) >> "displayName");							
-								_w pushBackUnique _tx;
-							} forEach _weapons;
-
+								profileNameSpace setVariable["mdhCASModBlackfishSelected",1];
+							}
+							else
 							{
-								if (_x != "") then {_t = _t + " /// " + _x};
-							} forEach _w;
+								profileNameSpace setVariable["mdhCASModBlackfishSelected",0];
+								_a = (profileNameSpace getVariable [("mdhCASPlane" + str(side group player) + str(_this#1)),0]);
+								if (typename _a == "SCALAR") exitWith {systemChat "no saved planeconfig found!"; systemChat "using Arma 3 standard plane!"};
+	
+								_t = getText(configfile >> "CfgVehicles" >> (_a#0) >> "displayName");
+								if (_t == "") exitWith {systemChat ((_a#0)+" not found in current loaded mods!"); systemChat "using Arma 3 standard plane!"};
+	
+								_planeClass = _a#0;
+								_planeWeapons = _a#3;
+								_planeMagazines = _a#4;
+								_weapons = 0;
+								call (localNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
+	
+								_w = [];
+								{
+									_tx = getText(configfile >> "CfgWeapons" >> (_x#0) >> "displayName");							
+									_w pushBackUnique _tx;
+								} forEach _weapons;
+	
+								{
+									if (_x != "") then {_t = _t + " /// " + _x};
+								} forEach _w;
+							};
 							systemChat _t;
 						};
 					};
@@ -243,7 +261,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-05-23)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-03)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -308,7 +326,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ 'Set CAS planetype: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',1,''MDH CAS planeType 1 activated''] call mdhCASBriefingFnc"> PLANE 1 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',2,''MDH CAS planeType 2 activated''] call mdhCASBriefingFnc"> PLANE 2 </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',3,''MDH CAS planeType 3 activated''] call mdhCASBriefingFnc"> PLANE 3</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',3,''MDH CAS planeType 3 activated''] call mdhCASBriefingFnc"> PLANE 3 </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Blackfish Gunship activated''] call mdhCASBriefingFnc"> Blackfish Gunship</execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS call mode: <br/>'
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
@@ -321,11 +340,11 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',1,''MDH CAS item to call set UAV Terminal''] call mdhCASBriefingFnc">UAV Terminal</execute></font color>'
 							+ '<br/>'
 							+ '<br/>'
-							+ '---------------------------------------------------------------------------------------------------------'
+							+ '-----------------------------------------------------------------------------------------------------'
 							+ '<br/>'
 							+ '<font color="#CC0000" size="40"><execute expression = "[''mdhCASModCallOverModTab'',true,''''] call mdhCASBriefingFnc">&gt;&gt;&gt; CALL MDH CAS &lt;&lt;&lt;</execute></font color>'
 							+ '<br/>'
-							+ '---------------------------------------------------------------------------------------------------------'
+							+ '-----------------------------------------------------------------------------------------------------'
 							+ '<br/>'
 							+ 'If you have any question you can contact me at the steam workshop page.'
 							+ '<br/>'
@@ -363,7 +382,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		{
 			_mdhFnc =
 			{
-				_t = "call MDH CAS";
+				_t = "call MDH CAS Plane";
 				_a = [];
 				if (!isNil"mdhCASModCallerObj1" && {alive mdhCASModCallerObj1}) then {_a pushBackUnique mdhCASModCallerObj1};
 				if (!isNil"mdhCASModCallerObj2" && {alive mdhCASModCallerObj2}) then {_a pushBackUnique mdhCASModCallerObj2};
@@ -395,7 +414,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							{
 								scriptName "mdhSpawnCAS";
 								params ["_target"];
-								if (time < 3) exitWith {};
+								if (time < 3) exitWith {systemChat "try again in 3 sek"};
 								_debug = profileNameSpace getVariable ["mdhCASModDebug",false];
 								if (_debug) then {systemChat "MDH CAS Debug mode active"};
 								_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
@@ -1075,6 +1094,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							};
 						};
 						localNameSpace setVariable["mdhCASCode",_hoschisCASCode];
+						_hoschisBlackfishCode = localNameSpace getVariable["mdhCASCodeBlackfish",{systemChat "mdhCASCodeBlackfish not found"}];
 
 						[
 							_b
@@ -1085,6 +1105,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							alive _target 
 							&& {profileNameSpace getVariable ['mdhCASModActionmenu',true]}
 							&& {localNameSpace getVariable['mdhCASModCallTime',time - 1] < time}
+							&& {profileNameSpace getVariable['mdhCASModBlackfishSelected',0] == 0}
 							&& {if (!isNil'mdhCASModNeededItemToCall') then
 							{
 								mdhCASModNeededItemToCall in
@@ -1114,6 +1135,73 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							,false
 							,false
 						] call mdhHoldActionAdd;
+						
+						if (!isNil"_hoschisBlackfishCode") then
+						{
+							[
+								_b
+								,"call MDH CAS Blackfish"
+								,"mdhCAS\mdhBlackfishSmall.paa"
+								,"mdhCAS\mdhBlackfishSmall.paa"
+								,"
+								alive _target 
+								&& {profileNameSpace getVariable ['mdhCASModActionmenu',true]}
+								&& {profileNameSpace getVariable['mdhCASModBlackfishSelected',0] == 1}
+								&& {localNameSpace getVariable['mdhCASModCallTime',time - 1] < time}
+								&& {localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0}
+								&& {if (!isNil'mdhCASModNeededItemToCall') then
+								{
+									mdhCASModNeededItemToCall in
+									(
+										itemsWithMagazines player
+										+ assignedItems [player, true, true]
+										+ weapons player
+										+ primaryWeaponItems player
+										+ secondaryWeaponItems player
+										+ handgunItems player
+									)
+								}
+								else
+								{
+									true
+								}}
+								"
+								,"true"
+								,{}
+								,{}
+								,_hoschisBlackfishCode
+								,{}
+								,[0]
+								,2
+								,-1
+								,false
+								,false
+								,false
+							] call mdhHoldActionAdd;
+
+							[
+								_b
+								,"cancel MDH CAS Blackfish"
+								,"a3\ui_f\data\IGUI\Cfg\HoldActions\holdAction_takeOff2_ca.paa"
+								,"a3\ui_f\data\IGUI\Cfg\HoldActions\holdAction_takeOff2_ca.paa"
+								,"
+								alive _target 
+								&& {profileNameSpace getVariable ['mdhCASModActionmenu',true]}
+								&& {localNameSpace getVariable['mdhCASModBlackfishActive',0] == 1}
+								"
+								,"true"
+								,{}
+								,{}
+								,_hoschisBlackfishCode
+								,{}
+								,[0]
+								,2
+								,-1
+								,false
+								,false
+								,false
+							] call mdhHoldActionAdd;
+						};
 					};
 				} forEach _a;
 				
