@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-03
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-05
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9,9 +9,10 @@ _hoschisBlackfishCode =
 	_target spawn 
 	{
 		if !(hasInterface) exitWith {};
-		scriptName "mdhSpawnCASBlackfish";
+		scriptName "mdhSpawnCASGunship";
 
 		if (time < 3) exitWith {systemChat "try again in 3 sek"};
+		if (isNil"mdhCASModBlackfishSpawned") then {mdhCASModBlackfishSpawned = []};		
 		_debug = profileNameSpace getVariable ["mdhCASModDebug",false];
 		if (_debug) then {systemChat "MDH CAS Debug mode active"};
 		_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
@@ -41,6 +42,8 @@ _hoschisBlackfishCode =
 			mdhCASModBlackfishSpawned = [];
 		};
 
+		localNameSpace setVariable['mdhCASModBlackfishActive',1];
+
 		if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 		{
 			playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
@@ -55,11 +58,12 @@ _hoschisBlackfishCode =
 				systemChat ("Close Air Support called ETA " + (if (_arrival - _i > 59) then {str((_arrival - _i)/60) + " min"} else {str(_arrival - _i) + " sec"}));
 				_counter = 0;
 			};
-			if (_i > _arrival) exitWith {};
+			if (_i > _arrival or (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0)) exitWith {};
 			_counter = _counter + 1;
 			sleep 1;
 		};
-		
+
+		if (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0) exitWith {};
 		_t = player;
 		_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
 		_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
@@ -161,8 +165,8 @@ _hoschisBlackfishCode =
 			if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
 			systemChat _s;
 			localNameSpace setVariable['mdhCASModCallTime',time + 5];
+			localNameSpace setVariable['mdhCASModBlackfishActive',0];
 		};
-
 
 		if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 		{
@@ -173,17 +177,13 @@ _hoschisBlackfishCode =
 		if (_redSmoke == 2) then {_s = "Close Air Support incomming on red smoke"};
 		systemChat _s;
 
-
-
 		_pos = _strikePos;
 		_side = side group player;
 		_pos = [_pos#0, _pos#1, 1];
 		_v = [[(0 + (ceil random 20)*10),(0 + (ceil random 20)*10), (2000+(ceil random 20)*10)], 0, "B_T_VTOL_01_armed_F", _side] call BIS_fnc_spawnVehicle;
 		_v = _v#0;
 		_v setpos [(_pos#0 + (ceil random 20)*10), (_pos#1 + (ceil random 20)*10), (1000+(ceil random 20)*10)];
-		if (isNil"mdhCASModBlackfishSpawned") then {mdhCASModBlackfishSpawned = []};
 		mdhCASModBlackfishSpawned pushBack _v;
-		localNameSpace setVariable['mdhCASModBlackfishActive',1];
 		_v setVelocityModelSpace [0, 100, 0];
 		sleep 0.1;
 		{_x setSkill 1; _x disableAI "WEAPONAIM"; _x disableAI "RADIOPROTOCOL"} forEach crew _v;
@@ -257,8 +257,8 @@ _hoschisBlackfishCode =
 									if (side _x == Independent) then {_color = [0,1,0,1 - (_dist / _distX)]};
 									_tSize=0.032;
 									_pos = unitAimPositionVisual _x;
-									_t = "mdhBlackfishTarget";
-									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", [0,0,1,1], getPos _v, 1, 1, 0,"mdhBlackfish", 1, _tSize];
+									_t = "mdhGunshipTarget";
+									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", [0,0,1,1], getPos _v, 1, 1, 0,"mdhGunship", 1, _tSize];
 									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", _color, _pos, 1, 1, 0,_t, 1, _tSize];
 								}
 							}
@@ -363,10 +363,10 @@ _hoschisBlackfishCode =
 					};
 				};
 	
-				if(1>0) then
+				if(1>0 && {alive _v}) then
 				{
 					sleep 3;
-					if (1>0 && {((_v getVariable ["mdhAc130StartTime",0])+5) < time} && {((_v getVariable ["mdhAc130LastFired",0])-5) < time}) then
+					if (1>0 && {alive _v} && {((_v getVariable ["mdhAc130StartTime",0])+5) < time} && {((_v getVariable ["mdhAc130LastFired",0])-5) < time}) then
 					{
 						_units = [];
 						_units200 = [];
@@ -382,6 +382,7 @@ _hoschisBlackfishCode =
 								if
 								(
 									alive _x 
+									&& {alive _v}
 									&& {_j < 1000} 
 									&& {_x distance2D _v > 500} 
 									&& {speed _x < 16}
@@ -409,22 +410,22 @@ _hoschisBlackfishCode =
 						if (!_k && {count _units800 > 0}) then {_k = true; _units = _units800};
 						if (!_k && {count _units999 > 0}) then {_k = true; _units = _units999};
 						
-						if (count _units > 0) then
+						if (count _units > 0 && {alive _v}) then
 						{
 							_e = vehicle(selectRandom (_units));
 							if (_t != player && {alive _t}) then {_e = _t};
 							_v setVariable ["mdhAc130Target",_e];
 							
 							sleep 0.1;
-							if (1>0) then
+							if (1>0 && {alive _v}) then
 							{
-								if (1>0) then
+								if (1>0 && {alive _v}) then
 								{
 									for "_i" from 1 to 2 do
 									{
 										_j = if (alive _e) then {true} else {false};
 										_k = if (_i < 2) then {1} else {random 1};
-										if (_j && {_k > 0.5}) then {for "_i2" from 1 to (20 + ceil(random 10)) do {if (true) then {_v action ["useWeapon", _v, _u, 5]; sleep (1/15)}}};
+										if (_j && {_k > 0.5}) then {for "_i2" from 1 to (20 + ceil(random 10)) do {if (alive _v) then {_v action ["useWeapon", _v, _u, 5]; sleep (1/15)}}};
 									};
 									sleep 1;
 								};
@@ -432,7 +433,12 @@ _hoschisBlackfishCode =
 								for "_i" from 1 to (7 + ceil(random 7)) do {if (vehicle _e == _e && {_j}) then {sleep 0.35; _v action ["useWeapon", _v, _u2, 0]}};
 								sleep 0.6;
 								for "_i" from 1 to (10 + ceil(random 5)) do {if (vehicle _e != _e && {_j}) then {sleep 0.35; _v action ["useWeapon", _v, _u2, 5]}};
-								if (alive _e) then {sleep 1; _v action ["useWeapon", _v, _u, 0]}} else {sleep 1};
+								if (alive _e) then {sleep 1; _v action ["useWeapon", _v, _u, 0]}
+							}
+							else
+							{
+								sleep 1
+							};
 						};
 					};
 				};
@@ -448,7 +454,7 @@ _hoschisBlackfishCode =
 		localNameSpace setVariable['mdhCASModBlackfishActive',0];
 		if (alive _v) then
 		{
-			systemChat "Blackfish Close Air Support finished";
+			systemChat "Gunship Close Air Support finished";
 			_v setVariable["mdhAc130End",true];
 			[_g, 1] setWaypointSpeed "FULL";
 			[_g, 1] setWaypointPosition [[0,0,0], 0];

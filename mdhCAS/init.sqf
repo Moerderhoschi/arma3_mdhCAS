@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-03
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-05
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,9 +205,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							[player] call _code;
 						};
 
+						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) > 3}) then
+						{
+							profileNameSpace setVariable["mdhCASModBlackfishSelected",0];
+						};
+
 						profileNameSpace setVariable[_this#0,_this#1];
 						systemChat (_this#2);
-
+						
 						if (_this#0 == "mdhCASModTimeout") then
 						{
 							_t = localNameSpace getVariable['mdhCASModCallTime',time - 1];
@@ -225,6 +230,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							if ((_this#1) == 9) then
 							{
 								profileNameSpace setVariable["mdhCASModBlackfishSelected",1];
+								if (profileNameSpace getVariable["mdhCASModCallMode",0] > 3) then
+								{
+									profileNameSpace setVariable["mdhCASModCallMode",0];
+								};
 							}
 							else
 							{
@@ -261,7 +270,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-03)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-05)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -327,13 +336,15 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',1,''MDH CAS planeType 1 activated''] call mdhCASBriefingFnc"> PLANE 1 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',2,''MDH CAS planeType 2 activated''] call mdhCASBriefingFnc"> PLANE 2 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',3,''MDH CAS planeType 3 activated''] call mdhCASBriefingFnc"> PLANE 3 </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Blackfish Gunship activated''] call mdhCASBriefingFnc"> Blackfish Gunship</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Gunship activated''] call mdhCASBriefingFnc"> Gunship</execute></font color>'
 							+ '<br/><br/>'
-							+ 'Set CAS call mode: <br/>'
+							+ 'Set CAS call mode: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">near target red smoke</execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">direct at red smoke</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">Rolling CAS</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
 							//+ '<br/><br/>'
 							//+ 'Set CAS item for call: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',0,''MDH CAS item to call set none''] call mdhCASBriefingFnc">none</execute></font color>'
@@ -416,12 +427,16 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								params ["_target"];
 								if (time < 3) exitWith {systemChat "try again in 3 sek"};
 								_debug = profileNameSpace getVariable ["mdhCASModDebug",false];
-								if (_debug) then {systemChat "MDH CAS Debug mode active"};
+								_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
+								if (_callMode != 5) then {localNameSpace setVariable["mdhCASBrokenArrow",0]};
+								_brokenArrow = (localNameSpace getVariable["mdhCASBrokenArrow",0]);
+								if (_debug && {_brokenArrow == 0}) then {systemChat "MDH CAS Debug mode active"};
 								_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
 								_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
 								localNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
 								if (_debug && {name player == "Moerderhoschi"}) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
 								if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
+								if (_brokenArrow != 0) then {_arrival = (15+ random 5)};
 								_r = selectRandom [0,1,2];
 								_r = str(_r);
 								_l = "B";
@@ -431,18 +446,25 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									if (side group player == resistance) then {_l = "I"};
 								};
 
-								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
+								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0 && {_brokenArrow == 0}) then
 								{
 									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\01_CasRequested\mp_groundsupport_01_casrequested_"+_l+"HQ_"+_r+".ogg"];
 								};
 								_counter = 99;
 								for "_i" from 0 to _arrival do
 								{
-									_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
+									if (_brokenArrow == 0) then
+									{
+										_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15]
+									};
+
 									_limit = if (_arrival > 60 && {_arrival - _i > 60}) then {60} else {15};
 									if (_counter >= _limit && {_arrival - _i > 0}) then
 									{
-										systemChat ("Close Air Support called ETA " + (if (_arrival - _i > 59) then {str((_arrival - _i)/60) + " min"} else {str(_arrival - _i) + " sec"}));
+										if (_brokenArrow == 0) then
+										{
+											systemChat ("Close Air Support called ETA " + (if (_arrival - _i > 59) then {str((_arrival - _i)/60) + " min"} else {str(_arrival - _i) + " sec"}));
+										};
 										_counter = 0;
 									};
 									if (_i > _arrival) exitWith {};
@@ -458,7 +480,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_v = [];
 								for "_i" from 4 to 30 do {_v pushBack (_i*50)};
 								_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
-								_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
 								if (_debug && {name player == "Moerderhoschi"}) then {_min = 1};
 								_AA = [];
 								_mbt = [];
@@ -629,9 +650,47 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
 									systemChat _s;
 									localNameSpace setVariable['mdhCASModCallTime',time + 5];
+									localNameSpace setVariable["mdhCASBrokenArrow",0];
 								};
 
 								if (_redSmoke == 1) then {systemChat "no red smoke around 1000 meter of caller found"; systemChat "(Attacking nearest Target)"};
+
+								if (profileNameSpace getVariable['mdhCASModCallMode',0] == 4) then
+								{
+									0 spawn
+									{
+										_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
+										for "_i" from 5 to _timeout do
+										{
+											sleep 1;
+											_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
+											if (_i > _timeout) exitWith {}
+										};
+										if (profileNameSpace getVariable['mdhCASModCallMode',0] == 4) then
+										{
+											call (localNameSpace getVariable["mdhCASCode",{systemChat "mdhCASCode not found!"}]);
+										};
+									};
+								};
+
+								if (profileNameSpace getVariable['mdhCASModCallMode',0] == 5) then
+								{
+									0 spawn
+									{
+										_brokenArrow = (localNameSpace getVariable["mdhCASBrokenArrow",0]);
+										localNameSpace setVariable["mdhCASBrokenArrow",(_brokenArrow + 1)];
+										_brokenArrow = (localNameSpace getVariable["mdhCASBrokenArrow",0]);
+										if (_brokenArrow < 10) then
+										{
+											call (localNameSpace getVariable["mdhCASCode",{systemChat "mdhCASCode not found!"}]);
+										}
+										else
+										{
+											sleep 50;
+											localNameSpace setVariable["mdhCASBrokenArrow",0];
+										};
+									};
+								};
 
 								_logic = "logic" createVehicleLocal getPos _t;
 								_logic setPos getPos _t;
@@ -719,6 +778,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									{
 										_a = _i;
 										_h = _i/10;
+_h = _h + 700;
+if (_h > 999) then {_h = 999};
 										_dir = if (typename(_weaponsSorted#3)=="ARRAY" && {_i < 5000}) then {(vehicle player getDir _t) + 80 + random 30 + selectRandom[0,180]} else {random 360};
 										_planePos = [eyePos _t,_dis,_dir + 180] call bis_fnc_relpos;
 										_planePos set [2, _h];
@@ -734,14 +795,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_planePos set [2,(_pos#2) + _alt];
 								_logic setDir _dir;
 		
-								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
+								if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0 && {_brokenArrow == 0}) then
 								{
 									playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\50_Cas\mp_groundsupport_50_cas_"+_l+"HQ_"+_r+".ogg"];
 								};
 								_s = "Close Air Support incomming";
 								if (_MapLocation == 2) then {_s = ('Close Air Support incomming on map marker "' + _markerText + '"')};
 								if (_redSmoke == 2) then {_s = "Close Air Support incomming on red smoke"};
-								systemChat _s;
+								if (_brokenArrow == 0) then {systemChat _s};
 		
 								_z="--- Create plane";
 								_planeSide = side group player;
@@ -772,7 +833,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_plane setcombatmode "blue";
 								//player setDir (player getDir _plane);
 		
-								if (_debug) then
+								if (profileNameSpace getVariable ["mdhCASModDebug",false]) then
 								{
 									_eh = addMissionEventHandler[ 'Draw3D',
 									{
@@ -1140,7 +1201,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						{
 							[
 								_b
-								,"call MDH CAS Blackfish"
+								,"call MDH CAS Gunship"
 								,"mdhCAS\mdhBlackfishSmall.paa"
 								,"mdhCAS\mdhBlackfishSmall.paa"
 								,"
@@ -1181,7 +1242,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 							[
 								_b
-								,"cancel MDH CAS Blackfish"
+								,"cancel MDH CAS Gunship"
 								,"a3\ui_f\data\IGUI\Cfg\HoldActions\holdAction_takeOff2_ca.paa"
 								,"a3\ui_f\data\IGUI\Cfg\HoldActions\holdAction_takeOff2_ca.paa"
 								,"
