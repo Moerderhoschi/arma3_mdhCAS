@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-05
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-06
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +101,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									};
 								};
 
-								//if (_ammo isKindOf "MissileBase" && {_airLock < 2} && {_lockType == 0} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ""}) exitWith
 								if (_ammo isKindOf "MissileBase" && {_canLock == 2} && {_airLock < 2} && {_autoSeekTarget == 1 OR _laserLock == 1 OR _irLock == 1 OR _newSensors != ""}) exitWith
 								{
 									_weapons set [count _weapons,[_w,_mode]];
@@ -270,7 +269,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-05)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-06)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -336,7 +335,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',1,''MDH CAS planeType 1 activated''] call mdhCASBriefingFnc"> PLANE 1 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',2,''MDH CAS planeType 2 activated''] call mdhCASBriefingFnc"> PLANE 2 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',3,''MDH CAS planeType 3 activated''] call mdhCASBriefingFnc"> PLANE 3 </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Gunship activated''] call mdhCASBriefingFnc"> Gunship</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Gunship activated''] call mdhCASBriefingFnc"> Gunship </execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS call mode: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
@@ -539,8 +538,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_strikePos = getPos _x;
 											_redSmokeShell = _x;
 											_min = 0;
-											//_v = [];
-											//for "_i" from 1 to 6 do {_v pushBack (_i*50)};
 										};
 									} forEach _n;
 								};
@@ -778,8 +775,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									{
 										_a = _i;
 										_h = _i/10;
-_h = _h + 700;
-if (_h > 999) then {_h = 999};
+										_h = _h + 700;
+										if (_h > 999) then {_h = 999};
 										_dir = if (typename(_weaponsSorted#3)=="ARRAY" && {_i < 5000}) then {(vehicle player getDir _t) + 80 + random 30 + selectRandom[0,180]} else {random 360};
 										_planePos = [eyePos _t,_dis,_dir + 180] call bis_fnc_relpos;
 										_planePos set [2, _h];

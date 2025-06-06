@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-05
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-06
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12,7 +12,7 @@ _hoschisBlackfishCode =
 		scriptName "mdhSpawnCASGunship";
 
 		if (time < 3) exitWith {systemChat "try again in 3 sek"};
-		if (isNil"mdhCASModBlackfishSpawned") then {mdhCASModBlackfishSpawned = []};		
+		if (isNil"mdhCASModBlackfishSpawned") then {mdhCASModBlackfishSpawned = []};
 		_debug = profileNameSpace getVariable ["mdhCASModDebug",false];
 		if (_debug) then {systemChat "MDH CAS Debug mode active"};
 		_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
@@ -180,16 +180,18 @@ _hoschisBlackfishCode =
 		_pos = _strikePos;
 		_side = side group player;
 		_pos = [_pos#0, _pos#1, 1];
-		_v = [[(0 + (ceil random 20)*10),(0 + (ceil random 20)*10), (2000+(ceil random 20)*10)], 0, "B_T_VTOL_01_armed_F", _side] call BIS_fnc_spawnVehicle;
+		_planeClass = "B_T_VTOL_01_armed_F";
+		if (isclass(configfile >> "cfgvehicles" >> "USAF_AC130U")) then {_planeClass = "USAF_AC130U"};
+		_v = [[(0 + (ceil random 20)*10),(0 + (ceil random 20)*10), (2000+(ceil random 20)*10)], 0, _planeClass, _side] call BIS_fnc_spawnVehicle;
 		_v = _v#0;
-		_v setpos [(_pos#0 + (ceil random 20)*10), (_pos#1 + (ceil random 20)*10), (1000+(ceil random 20)*10)];
+		_v setpos [(_pos#0 + (ceil random 20)*10), (_pos#1 + (ceil random 20)*10), (2000+(ceil random 20)*10)];
 		mdhCASModBlackfishSpawned pushBack _v;
 		_v setVelocityModelSpace [0, 100, 0];
 		sleep 0.1;
 		{_x setSkill 1; _x disableAI "WEAPONAIM"; _x disableAI "RADIOPROTOCOL"} forEach crew _v;
 		sleep 0.1;
 		_v engineOn true;
-		_h = 1000;
+		_h = 800;
 		_v flyInHeight 200;
 		_v flyInHeightASL [_h,_h,_h];
 		_g = group driver _v;
@@ -258,8 +260,8 @@ _hoschisBlackfishCode =
 									_tSize=0.032;
 									_pos = unitAimPositionVisual _x;
 									_t = "mdhGunshipTarget";
+									if (alive _x) then {drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", _color, _pos, 1, 1, 0,_t, 1, _tSize]};
 									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", [0,0,1,1], getPos _v, 1, 1, 0,"mdhGunship", 1, _tSize];
-									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", _color, _pos, 1, 1, 0,_t, 1, _tSize];
 								}
 							}
 						} forEach [(_v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)])];
@@ -275,7 +277,6 @@ _hoschisBlackfishCode =
 					if ((_v getVariable ["mdhAc130LastFired",-1]) == -1) then
 					{
 						_v setVariable["mdhAc130LastFired",time];
-						_v setVariable["mdhAc130Time105mm",time];
 						_v addEventHandler ["fired",
 						{
 							params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile", "_gunner"];
@@ -286,21 +287,10 @@ _hoschisBlackfishCode =
 							_v setVariable["mdhAc130LastFired",time];
 							
 							_e = _v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)];
-							_d = round(_v distance2D _e);
-							_vX = round(velocity _p#0);
-							_vY = round(velocity _p#1);
-							_vZ = round(velocity _p#2);
 							_random = {random 10 - random 10};
-							_h = 5;
-							if (_ammo == "Sh_105mm_HEAT_MP")  then {_h = (3 + random 3)};
-							if (_ammo == "B_20mm_Tracer_Red") then {_h = 10};
-							_h = _d / 100;
-							if (vehicle _e != _e && {_ammo != "B_20mm_Tracer_Red"}) then {_h = _d / 300};
-							_a = round(getDir _p);
 							_r = (_v getRelDir _e) + getDir _v;
 							if (_r > 360) then {_r = _r - 360};
 							_p setDir _r;
-							_b = round(getDir _p);
 	
 							if (1>0) then
 							{
@@ -323,6 +313,7 @@ _hoschisBlackfishCode =
 							if (1>0) then
 							{
 								if (_ammo == "B_20mm_Tracer_Red") then {_random = {random 20 - random 20}};
+								if (_ammo == "USAF_PGU_25_HEI") then {_random = {random 20 - random 20}};
 								_p setVelocity
 								[
 									(velocity _p#0) + (call _random),
@@ -341,6 +332,7 @@ _hoschisBlackfishCode =
 					{
 						params["_v"];
 						_a = [];
+						sleep 35;
 						while {sleep 3; alive _v && {!(_v getVariable["mdhAc130End",false])}} do
 						{
 							_h = (_v getVariable ["mdhAc130FlyInHeight",500]);
@@ -357,8 +349,19 @@ _hoschisBlackfishCode =
 							if (_m > 450) then {_h = _h - 5};
 							if (_m > 500) then {_h = _h - 5};
 							if (_h < 500) then {_h = 500};
-							if (1>0) then {_v setVariable ["mdhAc130FlyInHeight",_h]};
-							if (1>0) then {_v flyInHeightASL [_h,_h,_h]};
+							_v setVariable ["mdhAc130FlyInHeight",_h];
+							_v flyInHeightASL [_h,_h,_h];
+							if (1>0) then
+							{
+								systemChat
+								(
+									"mdhAc130"
+									+"  SetASL: "+str(_v getVariable ["mdhAc130FlyInHeight",0])
+									+", ASL: "+str(round(getPosASL _v#2))
+									+", AGL: "+str(round(getPos _v#2))
+									+", minAGL: "+str(round(_m))
+								);
+							}							
 						};
 					};
 				};
@@ -425,15 +428,74 @@ _hoschisBlackfishCode =
 									{
 										_j = if (alive _e) then {true} else {false};
 										_k = if (_i < 2) then {1} else {random 1};
-										if (_j && {_k > 0.5}) then {for "_i2" from 1 to (20 + ceil(random 10)) do {if (alive _v) then {_v action ["useWeapon", _v, _u, 5]; sleep (1/15)}}};
+										if (_j && {_k > 0.5}) then
+										{
+											for "_i2" from 1 to (20 + ceil(random 10)) do
+											{
+												if (alive _v) then
+												{
+													if (_planeClass == "USAF_AC130U") then
+													{
+														_v action ["useWeapon", _v, _v turretUnit[2], 2]; sleep (1/15)
+													}
+													else
+													{
+														_v action ["useWeapon", _v, _u, 5]; sleep (1/15)
+													};
+												}
+											}
+										};
 									};
 									sleep 1;
 								};
+
 								_j = if (alive _e) then {true} else {false};
-								for "_i" from 1 to (7 + ceil(random 7)) do {if (vehicle _e == _e && {_j}) then {sleep 0.35; _v action ["useWeapon", _v, _u2, 0]}};
+								
+								for "_i" from 1 to (7 + ceil(random 7)) do
+								{
+									if (vehicle _e == _e && {_j}) then
+									{
+										sleep 0.35;
+										if (_planeClass == "USAF_AC130U") then
+										{
+											_v action ["useWeapon", _v, _v turretUnit[2], 3];
+										}
+										else
+										{
+											_v action ["useWeapon", _v, _u2, 0];
+										};
+									}
+								};
 								sleep 0.6;
-								for "_i" from 1 to (10 + ceil(random 5)) do {if (vehicle _e != _e && {_j}) then {sleep 0.35; _v action ["useWeapon", _v, _u2, 5]}};
-								if (alive _e) then {sleep 1; _v action ["useWeapon", _v, _u, 0]}
+								
+								for "_i" from 1 to (10 + ceil(random 5)) do
+								{
+									if (vehicle _e != _e && {_j}) then
+									{
+										sleep 0.35;
+										if (_planeClass == "USAF_AC130U") then
+										{
+											_v action ["useWeapon", _v, _v turretUnit[2], 3];
+										}
+										else
+										{										
+											_v action ["useWeapon", _v, _u2, 5];
+										};
+									}
+								};
+								
+								if (alive _e) then
+								{
+									sleep 1;
+									if (_planeClass == "USAF_AC130U") then
+									{
+										_v action ["useWeapon", _v, _v turretUnit[2], 4];
+									}
+									else
+									{
+										_v action ["useWeapon", _v, _u, 0];
+									};
+								};
 							}
 							else
 							{
@@ -458,8 +520,10 @@ _hoschisBlackfishCode =
 			_v setVariable["mdhAc130End",true];
 			[_g, 1] setWaypointSpeed "FULL";
 			[_g, 1] setWaypointPosition [[0,0,0], 0];
+			_v flyInHeight 2500;
 			_v flyInHeightASL [2500,2500,2500];
 			sleep 3;
+			_v flyInHeight 2500;
 			_v flyInHeightASL [2500,2500,2500];
 			sleep 120;
 			{deleteVehicle _x} forEach Crew _v;
