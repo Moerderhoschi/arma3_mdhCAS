@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-06
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-18
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,7 +269,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-06)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-06-18)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -320,12 +320,20 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',240,''MDH CAS arrival time set to 4 min''] call mdhCASBriefingFnc"> 4 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',300,''MDH CAS arrival time set to 5 min''] call mdhCASBriefingFnc"> 5 </execute></font color>'
 							+ '<br/><br/>'
-							+ 'Set minDistance to player for CAS target in meter: '
+							+ 'Set minDistance to friendly players for CAS target in meter: '
 							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc"> 25 </execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc"> 50 </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc"> 100 </execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc"> 75 </execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',100,''MDH CAS min distance set to 100 meter''] call mdhCASBriefingFnc"> 100 </execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',125,''MDH CAS min distance set to 125 meter''] call mdhCASBriefingFnc"> 125 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',150,''MDH CAS min distance set to 150 meter''] call mdhCASBriefingFnc"> 150 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',200,''MDH CAS min distance set to 200 meter''] call mdhCASBriefingFnc"> 200</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',250,''MDH CAS min distance set to 250 meter''] call mdhCASBriefingFnc"> 250</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',300,''MDH CAS min distance set to 300 meter''] call mdhCASBriefingFnc"> 300</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',350,''MDH CAS min distance set to 350 meter''] call mdhCASBriefingFnc"> 350</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',400,''MDH CAS min distance set to 400 meter''] call mdhCASBriefingFnc"> 400</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',450,''MDH CAS min distance set to 450 meter''] call mdhCASBriefingFnc"> 450</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',500,''MDH CAS min distance set to 500 meter''] call mdhCASBriefingFnc"> 500</execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set behaviour when no red smoke found: '
 							+    '<font color="#CC0000"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',1,''MDH CAS no red smoke abort CAS activated''] call mdhCASBriefingFnc"> abort CAS </execute></font color>'
@@ -340,8 +348,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ 'Set CAS call mode: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">near target red smoke</execute></font color>'
-							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode cas red smoke activated''] call mdhCASBriefingFnc">direct at red smoke</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode cas red smoke near activated''] call mdhCASBriefingFnc">near target red smoke</execute></font color>'
+							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode cas red smoke direct activated''] call mdhCASBriefingFnc">direct at red smoke</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">Rolling CAS</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
 							//+ '<br/><br/>'
@@ -433,8 +441,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
 								_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
 								localNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
-								if (_debug && {name player == "Moerderhoschi"}) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
-								if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
+								//if (_debug && {name player == "Moerderhoschi"}) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
+								//if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
 								if (_brokenArrow != 0) then {_arrival = (15+ random 5)};
 								_r = selectRandom [0,1,2];
 								_r = str(_r);
@@ -478,8 +486,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								{if ((side group player) getFriend _x < 0.6) then {_enemySides pushBack _x}} forEach [east,west,resistance];
 								_v = [];
 								for "_i" from 4 to 30 do {_v pushBack (_i*50)};
-								_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
-								if (_debug && {name player == "Moerderhoschi"}) then {_min = 1};
+								_safeDistance = profileNameSpace getVariable ["mdhCASModMinDistance",25];
+								//if (_debug && {name player == "Moerderhoschi"}) then {_safeDistance = 1};
 								_AA = [];
 								_mbt = [];
 								_cars = [];
@@ -505,12 +513,12 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												_MapLocation = 2;
 												_markerText = markerText _x;
 												_strikePos = getmarkerPos _x;
-												_min = 0;
+												_safeDistance = 0;
 											};
 										};
 									} forEach allMapMarkers;
 
-									if (_min != 0) then
+									if (_safeDistance != 0) then
 									{
 										{
 											if ("cas" in toLowerANSI(markerText _x)) exitWith
@@ -518,7 +526,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												_MapLocation = 2;
 												_markerText = markerText _x;
 												_strikePos = getmarkerPos _x;
-												_min = 0;
+												_safeDistance = 0;
 											};
 										} forEach allMapMarkers;
 									};									
@@ -537,7 +545,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_redSmoke = 2;
 											_strikePos = getPos _x;
 											_redSmokeShell = _x;
-											_min = 0;
+											_safeDistance = 0;
 										};
 									} forEach _n;
 								};
@@ -554,7 +562,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									_tanksMoving = [];
 									_v = _x;
 									{
-										if (alive _x && {side _x in _enemySides} && {_x distance _strikePos > _min} && {_x distance _strikePos < _v }) then
+										if
+										(
+											alive _x 
+											&& {side _x in _enemySides} 
+											&& {_x distance _strikePos < _v }
+										)
+										then
 										{
 											_isAA = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "irScanRangeMin") > 600);
 											_isArty = (getnumber(configFile >> "cfgVehicles" >> (typeOf _x) >> "artilleryScanner") > 0);
@@ -575,14 +589,28 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									} forEach vehicles;
 
 									{
-										if (_t == player && {count _x > 0}) then {_x sort true; _t = _x#0#1};
-									} forEach [_mbt, _AA, _tanks, _cars, _mbtMoving, _AAmoving, _tanksMoving, _carsMoving];									
+										if (_t == player && {count _x > 0}) then
+										{
+											_x sort true;
+											{
+												_t1 = _x#1;
+												if (allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1) then {_t = _t1};
+											} forEach _x;
+										};
+									} forEach [_mbt, _AA, _tanks, _cars, _mbtMoving, _AAmoving, _tanksMoving, _carsMoving];
 
 									if (_t == player && {_v >= 300 && _redSmoke == 2 or _v >= 500}) then
 									{
 										_units = [];
 										{
-											if (alive _x && {side _x in _enemySides} && {_x distance _strikePos > _min} && {_x distance _strikePos < _v }) then
+											if
+											(
+												alive _x && 
+												{side _x in _enemySides} 
+												&& {_x distance _strikePos < _v } 
+												&& {_t1 = _x; allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1} 
+											)
+											then
 											{
 												_units pushBackUnique [_x distance _strikePos, _x];
 											}

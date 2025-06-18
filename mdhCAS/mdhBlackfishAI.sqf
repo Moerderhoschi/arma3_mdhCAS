@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-06
+// MDH CAS MOD(by Moerderhoschi) - v2025-06-18
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,9 +65,8 @@ _hoschisBlackfishCode =
 
 		if (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0) exitWith {};
 		_t = player;
-		_min = profileNameSpace getVariable ["mdhCASModMinDistance",25];
+		_safeDistance = 1;
 		_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
-		if (_debug && {name player == "Moerderhoschi"}) then {_min = 1};
 
 		_strikePosMode = 1;
 		_strikePos = getPos vehicle player;
@@ -88,12 +87,12 @@ _hoschisBlackfishCode =
 						_markerText = markerText _x;
 						_strikePos = getmarkerPos _x;
 						_strikePosMode = 2;
-						_min = 0;
+						_safeDistance = 0;
 					};
 				};
 			} forEach allMapMarkers;
 
-			if (_min != 0) then
+			if (_safeDistance != 0) then
 			{
 				{
 					if ("cas" in toLowerANSI(markerText _x)) exitWith
@@ -102,7 +101,7 @@ _hoschisBlackfishCode =
 						_markerText = markerText _x;
 						_strikePos = getmarkerPos _x;
 						_strikePosMode = 2;
-						_min = 0;
+						_safeDistance = 0;
 					};
 				} forEach allMapMarkers;
 			};									
@@ -122,7 +121,7 @@ _hoschisBlackfishCode =
 					_strikePos = getPos _x;
 					_strikePosMode = 2;
 					_redSmokeShell = _x;
-					_min = 0;
+					_safeDistance = 0;
 				};
 			} forEach _n;
 		};
@@ -213,7 +212,6 @@ _hoschisBlackfishCode =
 		};
 	
 		_v setVehicleLock "LOCKED";
-		_safeDistance = _min;
 		_grp = createGroup _side;
 	
 		_u  = _v turretUnit [1];
@@ -351,7 +349,7 @@ _hoschisBlackfishCode =
 							if (_h < 500) then {_h = 500};
 							_v setVariable ["mdhAc130FlyInHeight",_h];
 							_v flyInHeightASL [_h,_h,_h];
-							if (1>0) then
+							if (profileNameSpace getVariable ["mdhCASModDebug",false]) then 
 							{
 								systemChat
 								(
@@ -368,6 +366,7 @@ _hoschisBlackfishCode =
 	
 				if(1>0 && {alive _v}) then
 				{
+					_safeDistance = 50;
 					sleep 3;
 					if (1>0 && {alive _v} && {((_v getVariable ["mdhAc130StartTime",0])+5) < time} && {((_v getVariable ["mdhAc130LastFired",0])-5) < time}) then
 					{
@@ -391,7 +390,7 @@ _hoschisBlackfishCode =
 									&& {speed _x < 16}
 									&& {(_v getRelDir _x)>_lg} 
 									&& {(_v getRelDir _x)<_rg} 
-									&& {_c = true; _w = _x; {if (_w distance2D _x < _safeDistance) then {_c = false}} forEach allPlayers; _c}
+									&& {_t1 = _x; allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1} 
 									&& {([_v, "VIEW", vehicle _x] checkVisibility [eyePos _u, eyePos _x]) > 0}
 								)
 								then
@@ -413,6 +412,14 @@ _hoschisBlackfishCode =
 						if (!_k && {count _units800 > 0}) then {_k = true; _units = _units800};
 						if (!_k && {count _units999 > 0}) then {_k = true; _units = _units999};
 						
+						if (profileNameSpace getVariable['mdhCASModCallMode',0] == 3) then
+						{
+							if (!isNil "_redSmokeLogic" && {alive _redSmokeLogic}) then
+							{
+								_units = [_redSmokeLogic]
+							};
+						};
+
 						if (count _units > 0 && {alive _v}) then
 						{
 							_e = vehicle(selectRandom (_units));
