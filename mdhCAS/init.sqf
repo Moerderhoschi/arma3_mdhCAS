@@ -442,12 +442,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_strikePos = getPos vehicle player;
 								if (_callMode == 6) then
 								{
-									_strikePos = lineIntersectsSurfaces [eyePos player, ((getCameraViewDirection player)vectorMultiply 5000), player];
-									if (count _strikePos == 1) then
-									{
-										_strikePos = _strikePos#0#0;
-										_strikePos set [2, 0];
-									};
+									_strikePos = [];
+									if !(isNull cursorTarget) then {_strikePos = getPos cursorTarget};
+									if !(isNull cursorObject) then {_strikePos = getPos cursorObject};
 								};
 								if (count _strikePos == 0) exitWith {systemChat "MDH CAS no cursortarget found"};
 
