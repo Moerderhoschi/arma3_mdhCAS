@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-06-18
+// MDH CAS MOD(by Moerderhoschi) - v2025-07-24
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,8 +17,8 @@ _hoschisBlackfishCode =
 		if (_debug) then {systemChat "MDH CAS Debug mode active"};
 		_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
 		_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
-		localNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
-		if (_debug && {name player == "Moerderhoschi"}) then {localNameSpace setVariable['mdhCASModCallTime',time + 1]};
+		missionNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
+		if (_debug && {name player == "Moerderhoschi"}) then {missionNameSpace setVariable['mdhCASModCallTime',time + 1]};
 		if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
 		_r = selectRandom [0,1,2];
 		_r = str(_r);
@@ -29,7 +29,7 @@ _hoschisBlackfishCode =
 			if (side group player == resistance) then {_l = "I"};
 		};
 
-		if (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 1) exitWith
+		if (missionNameSpace getVariable['mdhCASModBlackfishActive',0] == 1) exitWith
 		{
 			if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 			{
@@ -37,12 +37,12 @@ _hoschisBlackfishCode =
 			};
 			systemChat "Close Air Support canceled";
 
-			localNameSpace setVariable['mdhCASModBlackfishActive',0];
+			missionNameSpace setVariable['mdhCASModBlackfishActive',0];
 			{_x setVariable["mdhAc130End",true]} forEach mdhCASModBlackfishSpawned;
 			mdhCASModBlackfishSpawned = [];
 		};
 
-		localNameSpace setVariable['mdhCASModBlackfishActive',1];
+		missionNameSpace setVariable['mdhCASModBlackfishActive',1];
 
 		if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 		{
@@ -58,12 +58,12 @@ _hoschisBlackfishCode =
 				systemChat ("Close Air Support called ETA " + (if (_arrival - _i > 59) then {str((_arrival - _i)/60) + " min"} else {str(_arrival - _i) + " sec"}));
 				_counter = 0;
 			};
-			if (_i > _arrival or (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0)) exitWith {};
+			if (_i > _arrival or (missionNameSpace getVariable['mdhCASModBlackfishActive',0] == 0)) exitWith {};
 			_counter = _counter + 1;
 			sleep 1;
 		};
 
-		if (localNameSpace getVariable['mdhCASModBlackfishActive',0] == 0) exitWith {};
+		if (missionNameSpace getVariable['mdhCASModBlackfishActive',0] == 0) exitWith {};
 		_t = player;
 		_safeDistance = 1;
 		_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
@@ -163,8 +163,8 @@ _hoschisBlackfishCode =
 			if (_MapLocation == 2) then {_s = ('(no targets found at map marker "' + _markerText + '")')};
 			if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
 			systemChat _s;
-			localNameSpace setVariable['mdhCASModCallTime',time + 5];
-			localNameSpace setVariable['mdhCASModBlackfishActive',0];
+			missionNameSpace setVariable['mdhCASModCallTime',time + 5];
+			missionNameSpace setVariable['mdhCASModBlackfishActive',0];
 		};
 
 		if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
@@ -520,7 +520,7 @@ _hoschisBlackfishCode =
 		};
 
 		sleep 1;
-		localNameSpace setVariable['mdhCASModBlackfishActive',0];
+		missionNameSpace setVariable['mdhCASModBlackfishActive',0];
 		if (alive _v) then
 		{
 			systemChat "Gunship Close Air Support finished";
@@ -538,4 +538,4 @@ _hoschisBlackfishCode =
 		};
 	};
 };
-localNameSpace setVariable["mdhCASCodeBlackfish",_hoschisBlackfishCode];
+missionNameSpace setVariable["mdhCASCodeBlackfish",_hoschisBlackfishCode];
