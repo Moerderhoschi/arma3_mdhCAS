@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-07-24
+// MDH CAS MOD(by Moerderhoschi) - v2025-07-25
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,7 +269,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-07-24)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-07-25)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -352,7 +352,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode cas red smoke direct activated''] call mdhCASBriefingFnc">direct at red smoke</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">Rolling CAS</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode Cursortarget activated''] call mdhCASBriefingFnc">Cursortarget</execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">near cursortarget</execute></font color>'
 							//+ '<br/><br/>'
 							//+ 'Set CAS item for call: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',0,''MDH CAS item to call set none''] call mdhCASBriefingFnc">none</execute></font color>'
@@ -444,7 +444,25 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								{
 									_strikePos = [];
 									if !(isNull cursorTarget) then {_strikePos = getPos cursorTarget};
-									if !(isNull cursorObject) then {_strikePos = getPos cursorObject};
+									if (count _strikepos == 0 && {!isNull cursorObject}) then {_strikePos = getPos cursorObject};
+									if (count _strikepos == 0 && {vehicle player == player}) then
+									{
+										_strikePos = lineIntersectsSurfaces
+										[
+											AGLToASL positionCameraToWorld [0,0,0],
+											(AGLToASL positionCameraToWorld [0,0,0]) vectorAdd ((getCameraViewDirection player) vectorMultiply 5000), 
+											player
+										];
+										if (count _strikepos == 1) then
+										{
+											_strikePos = _strikePos#0#0;
+											_strikePos set [2, 0];
+										}
+										else
+										{
+											_strikePos = [];
+										};
+									};
 								};
 								if (count _strikePos == 0) exitWith {systemChat "MDH CAS no cursortarget found"};
 
