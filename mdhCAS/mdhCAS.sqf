@@ -848,6 +848,12 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_weaponsSorted = 0;
 								call (missionNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
 								if (count _weapons == 0) exitwith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
+								if (_onlyAA == 1 && {count _missilelauncherAA == 0}) exitwith
+								{
+									systemChat "Close Air Support canceled no valid targets found";
+									missionNameSpace setVariable["mdhCASBrokenArrow",0];
+									missionNameSpace setVariable['mdhCASModCallTime',time + 5];
+								};
 
 								//systemChat str(_weapons);
 								_weapons = _weaponsSorted;
@@ -903,12 +909,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		
 								_z="--- Create plane";
 								_planeSide = side group player;
-								if (_planeSide == CIVILIAN) then
-								{
-									if !(resistance in _enemySides) then {_planeSide = resistance; _planeClass = "I_Plane_Fighter_03_CAS_F"};
-									if !(east in _enemySides)       then {_planeSide = east;       _planeClass = "O_Plane_CAS_02_F"};
-									if !(west in _enemySides)       then {_planeSide = west;       _planeClass = "B_Plane_CAS_01_F"};
-								};
 								_planeArray = [_planePos,_dir,_planeClass,_planeSide] call bis_fnc_spawnVehicle;
 								_plane = _planeArray select 0;
 								
@@ -1106,12 +1106,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 														[_b, _tAA] spawn {params["_b","_tAA"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tAA}};
 													};
 												};
-
-												if (_plane getVariable ["onlyAA",0] == 1) then
-												{
-													_plane setVariable ["onlyAA",2];
-												};
 											};
+											if (_plane getVariable ["onlyAA",0] == 1) then {_plane setVariable ["onlyAA",2]};
 
 											sleep 2;
 											if (damage _plane > 0.2) exitWith {};
