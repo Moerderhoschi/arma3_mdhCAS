@@ -24,7 +24,7 @@ class CfgFunctions
 		{
 			class mdhCAS
 			{
-				file = "mdhCAS\init.sqf";
+				file = "mdhCAS\mdhCAS.sqf";
 				postInit = 1;
 			};
 		};

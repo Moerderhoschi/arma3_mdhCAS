@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-07-27
+// MDH CAS MOD(by Moerderhoschi) - v2025-08-20
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,9 +17,10 @@ _hoschisBlackfishCode =
 		if (_debug) then {systemChat "MDH CAS Debug mode active"};
 		_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
 		_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15];
+		_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
 		missionNameSpace setVariable['mdhCASModCallTime',time + _timeout + _arrival];
-		if (_debug && {name player == "Moerderhoschi"}) then {missionNameSpace setVariable['mdhCASModCallTime',time + 1]};
-		if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
+		//if (_debug && {name player == "Moerderhoschi"}) then {missionNameSpace setVariable['mdhCASModCallTime',time + 1]};
+		//if (_debug && {name player == "Moerderhoschi"}) then {_arrival = 5};
 		_r = selectRandom [0,1,2];
 		_r = str(_r);
 		_l = "B";
@@ -41,6 +42,33 @@ _hoschisBlackfishCode =
 			{_x setVariable["mdhAc130End",true]} forEach mdhCASModBlackfishSpawned;
 			mdhCASModBlackfishSpawned = [];
 		};
+
+		_strikePos = getPos vehicle player;
+		if (_callMode in [6,7]) then
+		{
+			_strikePos = [];
+			if !(isNull cursorTarget) then {_strikePos = getPos cursorTarget};
+			if (count _strikepos == 0 && {!isNull cursorObject}) then {_strikePos = getPos cursorObject};
+			if (count _strikepos == 0 && {vehicle player == player}) then
+			{
+				_strikePos = lineIntersectsSurfaces
+				[
+					AGLToASL positionCameraToWorld [0,0,0],
+					(AGLToASL positionCameraToWorld [0,0,0]) vectorAdd ((getCameraViewDirection player) vectorMultiply 5000), 
+					player
+				];
+				if (count _strikepos == 1) then
+				{
+					_strikePos = _strikePos#0#0;
+					_strikePos set [2, 0];
+				}
+				else
+				{
+					_strikePos = [];
+				};
+			};
+		};
+		if (count _strikePos == 0) exitWith {systemChat "MDH CAS no cursortarget found"};
 
 		missionNameSpace setVariable['mdhCASModBlackfishActive',1];
 
@@ -66,14 +94,12 @@ _hoschisBlackfishCode =
 		if (missionNameSpace getVariable['mdhCASModBlackfishActive',0] == 0) exitWith {};
 		_t = player;
 		_safeDistance = 1;
-		_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
 
 		_strikePosMode = 1;
-		_strikePos = getPos vehicle player;
+		if !(_callMode in [6,7]) then {_strikePos = getPos vehicle player};
 
 		_MapLocation = 0;
 		_markerText = "";
-
 		if (_callMode == 1) then
 		{
 			_MapLocation = 1;
@@ -126,6 +152,7 @@ _hoschisBlackfishCode =
 			} forEach _n;
 		};
 
+		_redSmokeLogic = player;
 		if ((_callMode == 3 or _callMode == 2 && _t == player) && {_redSmoke == 2} && {_redSmokeShell != player}) then
 		{
 			_redSmokeLogic = "logic" createVehicleLocal getPos _redSmokeShell;
@@ -146,12 +173,15 @@ _hoschisBlackfishCode =
 			};
 		};
 
+		if (_callMode in [6,7]) then {_strikePosMode = 2};
+		if (_callMode == 7) then
+		{
+			_t = "logic" createVehicleLocal _strikepos;
+			_redSmokeLogic = _t;
+			_t spawn {sleep 60; deleteVehicle _this};
+		};
 
-
-
-
-		
-		if ((FALSE AND _t == player) or (_redSmoke == 1 && (profileNameSpace getVariable ["mdhCASModNoRedSmokeThenAbort",0] == 1)) or _MapLocation == 1) exitWith
+		if (_redSmoke == 1 && (profileNameSpace getVariable ["mdhCASModNoRedSmokeThenAbort",0] == 1) or _MapLocation == 1) exitWith
 		{
 			if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 			{
@@ -181,6 +211,7 @@ _hoschisBlackfishCode =
 		_pos = [_pos#0, _pos#1, 1];
 		_planeClass = "B_T_VTOL_01_armed_F";
 		if (isclass(configfile >> "cfgvehicles" >> "USAF_AC130U")) then {_planeClass = "USAF_AC130U"};
+		if (isclass(configfile >> "cfgvehicles" >> "vnx_b_air_ac119_01_01")) then {_planeClass = "vnx_b_air_ac119_01_01"};
 		_v = [[(0 + (ceil random 20)*10),(0 + (ceil random 20)*10), (2000+(ceil random 20)*10)], 0, _planeClass, _side] call BIS_fnc_spawnVehicle;
 		_v = _v#0;
 		_v setpos [(_pos#0 + (ceil random 20)*10), (_pos#1 + (ceil random 20)*10), (2000+(ceil random 20)*10)];
@@ -242,6 +273,7 @@ _hoschisBlackfishCode =
 				_eh = addMissionEventHandler[ "Draw3D",
 				{
 					_v = _thisArgs#0;
+					_wPos = (WaypointPosition[group driver _v,1]);
 					if (alive _v) then
 					{
 						{
@@ -260,6 +292,7 @@ _hoschisBlackfishCode =
 									_t = "mdhGunshipTarget";
 									if (alive _x) then {drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", _color, _pos, 1, 1, 0,_t, 1, _tSize]};
 									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", [0,0,1,1], getPos _v, 1, 1, 0,"mdhGunship", 1, _tSize];
+									drawIcon3D ["\a3\ui_f\data\Map\VehicleIcons\iconExplosiveGP_ca.paa", [0,0,1,1], _wPos, 1, 1, 0,"_wPos", 1, _tSize];
 								}
 							}
 						} forEach [(_v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)])];
@@ -268,7 +301,7 @@ _hoschisBlackfishCode =
 				[_eh,_v]spawn{params["_eh","_v"];_time = time + 600; waitUntil{sleep 1; time > _time or _v getVariable["mdhAc130End",false] or !alive _v};removeMissionEventHandler["Draw3D",_eh]};
 			};
 
-			while{((_v getVariable["mdhAc130StartTime",0])+600) > time && !(_v getVariable["mdhAc130End",false]) && {alive _v}} do
+			while{((_v getVariable["mdhAc130StartTime",0])+600) > time && !(_v getVariable["mdhAc130End",false]) && {alive _v} && {damage _v < 0.2}} do
 			{
 				if (1>0) then
 				{
@@ -283,13 +316,13 @@ _hoschisBlackfishCode =
 							_p = _projectile;
 							_v setVehicleAmmo 1;
 							_v setVariable["mdhAc130LastFired",time];
-							
+
 							_e = _v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)];
 							_random = {random 10 - random 10};
 							_r = (_v getRelDir _e) + getDir _v;
 							if (_r > 360) then {_r = _r - 360};
 							_p setDir _r;
-	
+
 							if (1>0) then
 							{
 								_object = _p;
@@ -364,11 +397,11 @@ _hoschisBlackfishCode =
 					};
 				};
 	
-				if(1>0 && {alive _v}) then
+				if(alive _v) then
 				{
 					_safeDistance = 50;
 					sleep 3;
-					if (1>0 && {alive _v} && {((_v getVariable ["mdhAc130StartTime",0])+5) < time} && {((_v getVariable ["mdhAc130LastFired",0])-5) < time}) then
+					if (alive _v && {((_v getVariable ["mdhAc130StartTime",0])+5) < time} && {((_v getVariable ["mdhAc130LastFired",0])-5) < time}) then
 					{
 						_units = [];
 						_units200 = [];
@@ -376,48 +409,52 @@ _hoschisBlackfishCode =
 						_units600 = [];
 						_units800 = [];
 						_units999 = [];
-						_wPos = (WaypointPosition[_g,1]);
+
+						if (profileNameSpace getVariable['mdhCASModCallMode',0] in [3,7]) then
 						{
-							_w = _x;
-							{
-								_j = _x distance2D _wPos;
-								if
-								(
-									alive _x 
-									&& {alive _v}
-									&& {_j < 1000} 
-									&& {_x distance2D _v > 500} 
-									&& {speed _x < 16}
-									&& {(_v getRelDir _x)>_lg} 
-									&& {(_v getRelDir _x)<_rg} 
-									&& {_t1 = _x; allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1} 
-									&& {([_v, "VIEW", vehicle _x] checkVisibility [eyePos _u, eyePos _x]) > 0}
-								)
-								then
-								{
-									_k = false;
-									if (!_k && {_j < 200}) then {_k = true; _units200 pushBackUnique _x};
-									if (!_k && {_j < 400}) then {_k = true; _units400 pushBackUnique _x};
-									if (!_k && {_j < 600}) then {_k = true; _units600 pushBackUnique _x};
-									if (!_k && {_j < 800}) then {_k = true; _units800 pushBackUnique _x};
-									if (!_k && {_j < 999}) then {_k = true; _units999 pushBackUnique _x};
-								};
-							} forEach units _w
-						} forEach _es;
-						
-						_k = false;
-						if (!_k && {count _units200 > 0}) then {_k = true; _units = _units200};
-						if (!_k && {count _units400 > 0}) then {_k = true; _units = _units400};
-						if (!_k && {count _units600 > 0}) then {_k = true; _units = _units600};
-						if (!_k && {count _units800 > 0}) then {_k = true; _units = _units800};
-						if (!_k && {count _units999 > 0}) then {_k = true; _units = _units999};
-						
-						if (profileNameSpace getVariable['mdhCASModCallMode',0] == 3) then
-						{
-							if (!isNil "_redSmokeLogic" && {alive _redSmokeLogic}) then
+							if (!isNil "_redSmokeLogic" && {alive _redSmokeLogic} && {_redSmokeLogic != player}) then
 							{
 								_units = [_redSmokeLogic]
 							};
+						};
+
+						if (count _units == 0) then 
+						{
+							_wPos = (WaypointPosition[_g,1]);
+							{
+								_w = _x;
+								{
+									_j = _x distance2D _wPos;
+									if
+									(
+										alive _x 
+										&& {alive _v}
+										&& {_j < 1000} 
+										&& {_x distance2D _v > 500} 
+										&& {speed _x < 16}
+										&& {(_v getRelDir _x)>_lg} 
+										&& {(_v getRelDir _x)<_rg} 
+										&& {_t1 = _x; allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1} 
+										&& {([_v, "VIEW", vehicle _x] checkVisibility [eyePos _u, eyePos _x]) > 0}
+									)
+									then
+									{
+										_k = false;
+										if (!_k && {_j < 200}) then {_k = true; _units200 pushBackUnique _x};
+										if (!_k && {_j < 400}) then {_k = true; _units400 pushBackUnique _x};
+										if (!_k && {_j < 600}) then {_k = true; _units600 pushBackUnique _x};
+										if (!_k && {_j < 800}) then {_k = true; _units800 pushBackUnique _x};
+										if (!_k && {_j < 999}) then {_k = true; _units999 pushBackUnique _x};
+									};
+								} forEach units _w
+							} forEach _es;
+							
+							_k = false;
+							if (!_k && {count _units200 > 0}) then {_k = true; _units = _units200};
+							if (!_k && {count _units400 > 0}) then {_k = true; _units = _units400};
+							if (!_k && {count _units600 > 0}) then {_k = true; _units = _units600};
+							if (!_k && {count _units800 > 0}) then {_k = true; _units = _units800};
+							if (!_k && {count _units999 > 0}) then {_k = true; _units = _units999};
 						};
 
 						if (count _units > 0 && {alive _v}) then
@@ -425,7 +462,7 @@ _hoschisBlackfishCode =
 							_e = vehicle(selectRandom (_units));
 							if (_t != player && {alive _t}) then {_e = _t};
 							_v setVariable ["mdhAc130Target",_e];
-							
+
 							sleep 0.1;
 							if (1>0 && {alive _v}) then
 							{
@@ -441,14 +478,11 @@ _hoschisBlackfishCode =
 											{
 												if (alive _v) then
 												{
-													if (_planeClass == "USAF_AC130U") then
-													{
-														_v action ["useWeapon", _v, _v turretUnit[2], 2]; sleep (1/15)
-													}
-													else
-													{
-														_v action ["useWeapon", _v, _u, 5]; sleep (1/15)
-													};
+													sleep (1/15);
+													if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 5]};
+													if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 2]};
+													if (_planeClass == "vnx_b_air_ac119_01_01") then {_v action ["useWeapon", _v, _v turretUnit[1], 5]};
+													if (_planeClass == "vnx_b_air_ac119_01_01") then {_v action ["useWeapon", _v, _v turretUnit[1], 8]};
 												}
 											}
 										};
@@ -456,21 +490,16 @@ _hoschisBlackfishCode =
 									sleep 1;
 								};
 
-								_j = if (alive _e) then {true} else {false};
+								if (_planeClass == "vnx_b_air_ac119_01_01") exitWith {};
+								_j = if (alive _e && {alive _v}) then {true} else {false};
 								
 								for "_i" from 1 to (7 + ceil(random 7)) do
 								{
 									if (vehicle _e == _e && {_j}) then
 									{
 										sleep 0.35;
-										if (_planeClass == "USAF_AC130U") then
-										{
-											_v action ["useWeapon", _v, _v turretUnit[2], 3];
-										}
-										else
-										{
-											_v action ["useWeapon", _v, _u2, 0];
-										};
+										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 0]};
+										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]};
 									}
 								};
 								sleep 0.6;
@@ -480,28 +509,16 @@ _hoschisBlackfishCode =
 									if (vehicle _e != _e && {_j}) then
 									{
 										sleep 0.35;
-										if (_planeClass == "USAF_AC130U") then
-										{
-											_v action ["useWeapon", _v, _v turretUnit[2], 3];
-										}
-										else
-										{										
-											_v action ["useWeapon", _v, _u2, 5];
-										};
+										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 5]};
+										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]};
 									}
 								};
 								
-								if (alive _e) then
+								if (alive _e && {alive _v}) then
 								{
 									sleep 1;
-									if (_planeClass == "USAF_AC130U") then
-									{
-										_v action ["useWeapon", _v, _v turretUnit[2], 4];
-									}
-									else
-									{
-										_v action ["useWeapon", _v, _u, 0];
-									};
+									if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 0]};
+									if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 4]};
 								};
 							}
 							else
@@ -523,6 +540,7 @@ _hoschisBlackfishCode =
 		missionNameSpace setVariable['mdhCASModBlackfishActive',0];
 		if (alive _v) then
 		{
+			if (damage _v > 0.2) then {systemChat "Gunship taking Damage"};
 			systemChat "Gunship Close Air Support finished";
 			_v setVariable["mdhAc130End",true];
 			[_g, 1] setWaypointSpeed "FULL";
