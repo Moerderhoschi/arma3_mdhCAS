@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-11-02
+// MDH CAS MOD(by Moerderhoschi) - v2025-11-03
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,10 +215,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						};
 
 						// 4 Rolling CAS, 5 BROKEN ARROW
-						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) in [4,5]}) then
-						{
-							profileNameSpace setVariable["mdhCASModBlackfishSelected",0];
-						};
+						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) != 5}) then {missionNameSpace setVariable['mdhCASBrokenArrow',0]};
+						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) in [4,5]}) then {profileNameSpace setVariable["mdhCASModBlackfishSelected",0]};
 
 						if (_this#0 == "mdhCASModTimeout") then
 						{
@@ -312,7 +310,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-11-02)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-11-03)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -1017,7 +1015,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		
 								if (profileNameSpace getVariable ["mdhCASModDebug",false]) then
 								{
-									systemChat (((_plane distance _t)toFixed 0)+" meter between CAS Plane and Target");
+									systemChat ("MDH CAS Debug: "+((_plane distance _t)toFixed 0)+" meter between CAS Plane and Target");
 									_eh = addMissionEventHandler[ 'Draw3D',
 									{
 										if (profileNameSpace getVariable ["mdhCASModDebug",false]) then
@@ -1095,9 +1093,11 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								// 5 BROKEN ARROW auto call
 								if (profileNameSpace getVariable['mdhCASModCallMode',0] == 5) then
 								{
-									0 spawn
+									[_plane] spawn
 									{
-										sleep (14 + random 4);
+										params["_plane"];
+										_time = time + 18;
+										waitUntil {sleep 1; time > _time OR (_plane getVariable["fireProgress",0]>0) OR (_plane getVariable["onlyMissile",0]==2) OR !(alive _plane) OR !(alive driver _plane)};
 										if !(profileNameSpace getVariable['mdhCASModCallMode',0] == 5) exitWith {};
 										_brokenArrow = (missionNameSpace getVariable["mdhCASBrokenArrow",0]);
 										missionNameSpace setVariable["mdhCASBrokenArrow",(_brokenArrow + 1)];
@@ -1108,6 +1108,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										}
 										else
 										{
+											sleep 9;
 											missionNameSpace setVariable["mdhCASBrokenArrow",0];
 										};
 									};
@@ -1251,6 +1252,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 		
 									if ((getposasl _plane) distance _pos < _fireDist && _fireNull) then
 									{
+										// 3 direct at red smoke, 7 direct at cursortarget
+										// before Gunrun check if friendly nearby and abort
+										if (!(_callMode in [3,7]) && {allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t < (profileNameSpace getVariable ["mdhCASModMinDistance",250])}} != -1}) exitWith
+										{
+											_plane setVariable ["onlyMissile",2];
+											systemChat "MDH CAS friendly players near target(minDistance), abort gunrun!";
+										};
+
 										_z="--- Create laser target";
 										private _targetType = if (_planeSide getfriend west > 0.6) then {"LaserTargetW"} else {"LaserTargetE"};
 										_target = ((position _logic nearEntities [_targetType,250])) param [0,objnull];
@@ -1401,7 +1410,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												} forEach (if (count _bomblauncher > 0) then {[_bomblauncher#0]} else {[]});
 												_plane setvariable ["fireProgress",(1 - ((_time - time) / _duration)) max 0 min 1];
 												//sleep 0.1;
-												time > _time || ((getPosASL _plane)#2) < _pullUp || isnull _plane || damage _plane > 0.2
+												time > _time || ((getPosASL _plane)#2) < _pullUp || isnull _plane || damage _plane > 0.2 || (_plane getVariable ["onlyMissile",0] == 2)
 											};
 											sleep 1;
 										};
@@ -1425,6 +1434,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									};
 								};
 								_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
+								if (missionNameSpace getVariable['mdhCASBrokenArrow',0] != 0) then {_timeout = _timeout + 9};
 								missionNameSpace setVariable['mdhCASModCallTime',time + 3 + _timeout];
 
 								// 4 Rolling CAS auto call
@@ -1476,6 +1486,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							alive _target 
 							&& {profileNameSpace getVariable ['mdhCASModActionmenu',true]}
 							&& {missionNameSpace getVariable['mdhCASModCallTime',time - 1] < time}
+							&& {missionNameSpace getVariable['mdhCASBrokenArrow',0] == 0}
 							&& {profileNameSpace getVariable['mdhCASModBlackfishSelected',0] == 0}
 							&& {if (!isNil'mdhCASModNeededItemToCall') then
 							{
