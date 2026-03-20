@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-11-03
+// MDH CAS MOD(by Moerderhoschi) - v2026-03-20
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7,9 +7,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 {
 	0 spawn
 	{
+		scriptName "mdhCAS.sqf";
 		_valueCheck = 99;
 		_defaultValue = 99;
-		_path = 'mdhCAS';
 		_env  = hasInterface;
 
 		_diary   = 0;
@@ -229,7 +229,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							{
 								missionNameSpace setVariable['mdhCASModCallTime', _callTimeNew];
 								_callTime = round(_callTimeNew - time);
-								[_calltime]spawn{params["_callTime"];sleep 1; systemChat ("MDH CAS cooldown " + str(_callTime) + " sec" + (if (_callTime > 180) then {" / " + str(round((_callTime/60) * 100) / 100) + " min"} else {""}))};
+								[_calltime]spawn{params["_callTime"];scriptName "mdhCasCallTimeSystemChat";sleep 1; systemChat ("MDH CAS cooldown " + str(_callTime) + " sec" + (if (_callTime > 180) then {" / " + str(round((_callTime/60) * 100) / 100) + " min"} else {""}))};
 							};
 						};
 
@@ -310,7 +310,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2025-11-03)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-03-20)<br/>'
 							+ '<br/>'
 							+ 'you are able to call in an CAS Strike.<br/>'
 							+ '<br/>'
@@ -432,7 +432,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ '<br/>'
 							+ '<br/>If you have any question you can contact me at the steam workshop page.'
 							+ '<br/>'
-							+ '<img image="'+(if(isNil"_path")then{""}else{_path})+'\mdhCAS.paa"/>'
+							+ '<img image="mdhCAS\mdhCAS.paa"/>'
 							+ '<br/>'
 							+ 'Credits and Thanks:<br/>'
 							+ 'Armed-Assault.de Crew  for many great ArmA moments in many years<br/>'
@@ -479,6 +479,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 			mdhCASmodStandardPlaneGuerWeapons = ["CMFlareLauncher","missiles_SCALPEL","Bomb_04_Plane_CAS_01_F","Twin_Cannon_20mm_gunpod","Missile_AA_04_Plane_CAS_01_F","BombCluster_01_F","missiles_DAR"];
 			mdhCASmodStandardPlaneGuerMagazines = ["120Rnd_CMFlare_Chaff_Magazine","PylonRack_1Rnd_Missile_AA_04_F","PylonRack_3Rnd_LG_scalpel","PylonMissile_1Rnd_BombCluster_01_F","PylonWeapon_300Rnd_20mm_shells","PylonMissile_1Rnd_Bomb_04_F","PylonRack_12Rnd_missiles","PylonRack_1Rnd_Missile_AA_04_F"];
 
+
+
+
+
 			_mdhFnc =
 			{
 				if !(localNameSpace getVariable ['mdhModsSelectDiarySubjectEh',false]) then
@@ -517,10 +521,10 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							params ["_target"];
 							_target spawn 
 							{
-								scriptName "mdhSpawnCAS";
+								scriptName "mdhCasSpawn";
 								params ["_target"];
-								if (time < 3) exitWith {systemChat "try again in 3 sek"};
 
+								if (time < 3) exitWith {systemChat "try again in 3 sek"};
 								// 0 near caller, 1 CAS mapMarker, 2 near red smoke near, 3 direct at red smoke, 4 Rolling CAS, 5 BROKEN ARROW, 6 near cursortarget, 7 direct at cursortarget
 								_callMode = profileNameSpace getVariable ["mdhCASModCallMode",0];
 								// 5 BROKEN ARROW
@@ -581,6 +585,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								for "_i" from 0 to 999 do
 								{
 									if (_brokenArrow == 0) then {_arrival = profileNameSpace getVariable['mdhCASModTimeArrival',15]};
+
 
 									if ((_arrival - _i) in [15,30,45,60,120,180,240,300]) then
 									{
@@ -693,7 +698,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_targetFound = false;
 								{
 									_v = _x;
-									if !(_targetFound) then
+									if (!_targetFound) then
 									{
 										_AA = [];
 										_mbt = [];
@@ -825,6 +830,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									[_redSmokeShell,_redSmokeLogic] spawn
 									{
 										params["_redSmokeShell","_redSmokeLogic"];
+										scriptName "mdhCasRedSmokeShellTracking";
 										for "_i" from 1 to 60 do
 										{
 											if !(isNull _redSmokeShell) then
@@ -841,7 +847,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								if (_callMode == 7) then
 								{
 									_t = "logic" createVehicleLocal _strikePos;
-									_t spawn {sleep 90; deleteVehicle _this};
+									_t spawn {scriptName "mdhCasDelteLogicIn90sec";sleep 90; deleteVehicle _this};
 								};
 
 								_onlyMissile = 0;
@@ -851,23 +857,28 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									_tP = getPos _tM1;
 									if (_tM1 == player) then {_tP = getPos _tAA};
 									_t = "logic" createVehicleLocal [_tp#0, _tp#1, 0];
-									_t spawn {sleep 90; deleteVehicle _this};
+									_t spawn {scriptName "mdhCasDelteLogicIn90sec";sleep 90; deleteVehicle _this};
 								};
 
 								if (_t == player or (_redSmoke == 1 && (profileNameSpace getVariable ["mdhCASModNoRedSmokeThenAbort",0] == 1)) or _MapLocation == 1) exitWith
 								{
+
 									if (profileNameSpace getVariable ["mdhCASModVoicelanguage",1] != 0) then
 									{
 										playSoundUI ["a3\dubbing_f_heli\mp_groundsupport\05_CasAborted\mp_groundsupport_05_casaborted_"+_l+"HQ_"+_r+".ogg"];
 									};
+
 									systemChat "Close Air Support canceled no valid targets found";
 									_s = "(to close or to far from friendly players)";
+
 									if (_MapLocation == 1) then {_s = ("(no map marker with CAS in name found)")};
 									if (_MapLocation == 2) then {_s = ('(no targets found at map marker "' + _markerText + '")')};
 									if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
+
 									systemChat _s;
 									missionNameSpace setVariable['mdhCASModCallTime',time + 3];
 									missionNameSpace setVariable["mdhCASBrokenArrow",0];
+
 								};
 
 								if (_redSmoke == 1) then {systemChat "no red smoke around 1000 meter of caller found"; systemChat "(Attacking nearest Target)"};
@@ -914,7 +925,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								};
 
 								_planeCfg = configfile >> "cfgvehicles" >> _planeClass;
-								if !(isclass _planeCfg) exitwith {["Vehicle class '%1' not found",_planeClass] call bis_fnc_error; false};
+								if !(isclass _planeCfg) exitWith {["Vehicle class '%1' not found",_planeClass] call bis_fnc_error; false};
 
 								_weaponTypes = 0;
 								_weapons = 0;
@@ -922,8 +933,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_missilelauncherAA = [];
 								_weaponsSorted = 0;
 								call (missionNameSpace getVariable["mdhFncCASweapons",{systemChat "mdhFncCASweapons not found!"}]);
-								if (count _weapons == 0) exitwith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
-								if (_onlyMissile == 1 && {_tAA != player && count _missilelauncherAA == 0 OR _tM1 != player && count _missilelauncherAT == 0}) exitwith
+								if (count _weapons == 0) exitWith {["No weapon of types %2 found on '%1'",_planeClass,_weaponTypes] call bis_fnc_error; false};
+								if (_onlyMissile == 1 && {_tAA != player && count _missilelauncherAA == 0 OR _tM1 != player && count _missilelauncherAT == 0}) exitWith
 								{
 									systemChat "Close Air Support canceled no valid targets found";
 									missionNameSpace setVariable["mdhCASBrokenArrow",0];
@@ -993,7 +1004,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_planeSide = side group player;
 								_planeArray = [_planePos,_dir,_planeClass,_planeSide] call bis_fnc_spawnVehicle;
 								_plane = _planeArray select 0;
-								
+
 								{_plane setObjectTextureGlobal [_forEachIndex, _x]} forEach _planeCamo;
 								if (count _planeMagazines != 0) then
 								{
@@ -1012,7 +1023,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								_plane setcombatmode "blue";
 								_plane setVariable ["onlyMissile",_onlyMissile];
 								//player setDir (player getDir _plane);
-		
+
 								if (profileNameSpace getVariable ["mdhCASModDebug",false]) then
 								{
 									systemChat ("MDH CAS Debug: "+((_plane distance _t)toFixed 0)+" meter between CAS Plane and Target");
@@ -1065,12 +1076,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									[_eh,_plane,_dis] spawn
 									{
 										params["_eh","_plane","_dis"];
+										scriptName "mdhCasDebugDraw3D";
 										_time = time + (_dis/100) + 5;
 										waitUntil{sleep 1; time > _time or !alive _plane or _plane getVariable ["fireProgressDone",false]};
 										removeMissionEventHandler["Draw3D",_eh]
 									};
 								};
-		
+
 								_vectorDir = [_planePos,_pos] call bis_fnc_vectorFromXtoY;
 								_velocity = [_vectorDir,_speed] call bis_fnc_vectorMultiply;
 								_plane setvectordir _vectorDir;
@@ -1096,6 +1108,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									[_plane] spawn
 									{
 										params["_plane"];
+										scriptName "mdhCasBrokenArrowLoop";
 										_time = time + 18;
 										waitUntil {sleep 1; time > _time OR (_plane getVariable["fireProgress",0]>0) OR (_plane getVariable["onlyMissile",0]==2) OR !(alive _plane) OR !(alive driver _plane)};
 										if !(profileNameSpace getVariable['mdhCASModCallMode',0] == 5) exitWith {};
@@ -1158,6 +1171,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										[_plane,_tM1,_tM2,_missilelauncherAT,_tAA,_missilelauncherAA] spawn
 										{
 											params["_plane","_tM1","_tM2","_missilelauncherAT","_tAA","_missilelauncherAA"];
+											scriptName "mdhCasMissileLaunchersFire";
 											if (count _missilelauncherAA > 0 && {_tAA != player}) then
 											{
 												_m = [];
@@ -1185,7 +1199,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 													if (count _b == 0) exitWith {};
 													_b = _b#0;
 													_b setMissileTarget _tAA;
-													[_b, _tAA] spawn {params["_b","_tAA"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tAA}};
+													[_b, _tAA] spawn {params["_b","_tAA"];scriptName "mdhCasSetMissileTarget";while{alive _b}do{sleep 0.1;_b setMissileTarget _tAA}};
 													sleep 2;
 													if (damage _plane < 0.2) then
 													{
@@ -1195,7 +1209,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 														if (count _b == 0) exitWith {};
 														_b = _b#0;
 														_b setMissileTarget _tAA;
-														[_b, _tAA] spawn {params["_b","_tAA"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tAA}};
+														[_b, _tAA] spawn {params["_b","_tAA"];scriptName "mdhCasSetMissileTarget";while{alive _b}do{sleep 0.1;_b setMissileTarget _tAA}};
 													};
 												};
 											};
@@ -1234,7 +1248,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											if (count _b == 0) exitWith {};
 											_b = _b#0;
 											_b setMissileTarget _tM1;
-											[_b, _tM1] spawn {params["_b","_tM1"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tM1}};
+											[_b, _tM1] spawn {params["_b","_tM1"];scriptName "mdhCasSetMissileTarget";while{alive _b}do{sleep 0.1;_b setMissileTarget _tM1}};
 											sleep 2;
 											if (damage _plane < 0.2) then
 											{
@@ -1244,7 +1258,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												if (count _b == 0) exitWith {};
 												_b = _b#0;
 												_b setMissileTarget _tM2;
-												[_b, _tM2] spawn {params["_b","_tM2"];while{alive _b}do{sleep 0.1;_b setMissileTarget _tM2}};
+												[_b, _tM2] spawn {params["_b","_tM2"];scriptName "mdhCasSetMissileTarget";while{alive _b}do{sleep 0.1;_b setMissileTarget _tM2}};
 											};
 											if (_plane getVariable ["onlyMissile",0] == 1) then {_plane setVariable ["onlyMissile",2]};
 										};
@@ -1277,6 +1291,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 										terminate _fire;
 										_fire = [_plane,_weapons,_target] spawn
 										{
+											scriptName "mdhCasGunBombRun";
 											_plane = _this select 0;
 											_planeDriver = driver _plane;
 											_weapons = _this select 1;
@@ -1354,6 +1369,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 																[_b,_plane] spawn
 																{
 																	params["_b","_plane"];
+																	scriptName "mdhCasNapalmBombSetVelocity";
 																	_v = velocity _plane;
 																	while {alive _b} do
 																	{
@@ -1384,6 +1400,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 																	[_b,_target,_plane] spawn
 																	{
 																		params["_b","_target","_plane"];
+																		scriptName "mdhCasBombSetTarget";
 																		_i = 0;
 																		sleep 0.5;
 																		_v = velocity _b;
@@ -1415,14 +1432,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											sleep 1;
 										};
 									};
-							
 									//sleep 0.01;
 									scriptdone _fire || isnull _logic || isnull _plane || damage _plane > 0.2 || (_plane getVariable ["onlyMissile",0] == 2)
 								};
 								if (damage _plane > 0.2) then {_planeDriver setDamage 1};
 								_plane setvelocity velocity _plane;
 								_plane flyinheight _alt;
-							
+
 								_z="--- Fire CM";
 								if (alive _planeDriver) then
 								{
@@ -1442,6 +1458,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								{
 									0 spawn
 									{
+										scriptName "mdhCasRollingCasAutoCall";
 										_time = time;
 										for "_i" from 1 to 999 do
 										{
@@ -1475,6 +1492,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							};
 						};
 						missionNameSpace setVariable["mdhCASCode",_hoschisCASCode];
+
 						_hoschisBlackfishCode = missionNameSpace getVariable["mdhCASCodeBlackfish",{systemChat "mdhCASCodeBlackfish not found"}];
 
 						[
@@ -1673,11 +1691,17 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								&& {speed _target < 2}
 								&&
 								{
-									_weapons = [];
-									_planeClass = typeOf _target;
-									_planeWeapons = weapons _target;
-									_planeMagazines = magazines _target;
-									call (missionNameSpace getVariable ['mdhFncCASweapons',{systemChat 'mdhFncCASweapons not found!'}]);
+									_time = _target getVariable['mdhCasHoldActionTime', 0];
+									_weapons = _target getVariable['mdhCasHoldActionWeapons', []];
+									if (time > _time) then
+									{
+										_planeClass = typeOf _target;
+										_planeWeapons = weapons _target;
+										_planeMagazines = magazines _target;
+										_target setVariable['mdhCasHoldActionTime', time + 1];
+										call (missionNameSpace getVariable ['mdhFncCASweapons',{systemChat 'mdhFncCASweapons not found!'}]);
+										_target setVariable['mdhCasHoldActionWeapons', _weapons];
+									};
 									count _weapons > 0
 								}
 								"
@@ -1701,16 +1725,24 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 		if (hasInterface) then
 		{
-			uiSleep 1.7;
-			call _diary;
+			if (isNil"mdhModDiaryEntries")then{mdhModDiaryEntries=[]; mdhModDiaryEntriesAdd = 1};
+			mdhModDiaryEntries pushBack ["mdhCAS",_diary];
+			uiSleep (2 + random 1);
+			if (mdhModDiaryEntriesAdd == 1) then
+			{
+				mdhModDiaryEntriesAdd = 0;
+				mdhModDiaryEntries sort false;
+				{call (_x#1)} forEach mdhModDiaryEntries;
+			};
 		};
 
-		sleep (1 + random 2);
+		_mdhModDiaryEntries = +mdhModDiaryEntries;
+		sleep (1 + random 1);
 		while {missionNameSpace getVariable ["pMdhCAS",_defaultValue] == _valueCheck} do
 		{
 			if (_env) then {call _mdhFnc};
-			sleep (7 + random 3);
-			if (hasInterface) then {call _diary};
+			sleep (3 + random 2);
+			if (hasInterface) then {{call (_x#1)} forEach _mdhModDiaryEntries};
 		};
 	};
 };
