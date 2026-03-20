@@ -314,10 +314,11 @@ _hoschisBlackfishCode =
 							_v = _unit;
 							_u = gunner _v;
 							_p = _projectile;
-							systemChat ("BlackFishAmmo: "+str(_gunner ammo _muzzle));
-							_muzzles = _v getVariable["mdhAc130Muzzles",[]];
-							_muzzles pushBackUnique [_gunner,_muzzle];
-							_v setVariable["mdhAc130Muzzles",_muzzles];
+							_v setVehicleAmmo 1;
+							//systemChat ("BlackFishAmmo: "+str(_gunner ammo _muzzle));
+							//_muzzles = _v getVariable["mdhAc130Muzzles",[]];
+							//_muzzles pushBackUnique [_gunner,_muzzle];
+							//_v setVariable["mdhAc130Muzzles",_muzzles];
 							_v setVariable["mdhAc130LastFired",time];
 
 							_e = _v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)];
@@ -530,17 +531,17 @@ _hoschisBlackfishCode =
 							};
 						};
 
-						_ammo = 0;
-						_muzzles = _v getVariable["mdhAc130Muzzles",[]];
-						{
-							_gunner = _x#0;
-							_muzzle = _x#1;
-							if (_ammo == 0) then {_ammo = (_gunner ammo _muzzle)};
-							systemChat (_muzzle + ": " + str(_ammo));
-						} forEach _muzzles;
-						if (_ammo == 0) then {systemChat "mdhAc130outOfAmmo"};
-						if (_v getVariable["tmp1",0] == 0) then {_v setVariable["tmp1",1];_v setVehicleAmmo 0.05};
-						_v setCaptive true;
+						//_ammo = 0;
+						//_muzzles = _v getVariable["mdhAc130Muzzles",[]];
+						//{
+						//	_gunner = _x#0;
+						//	_muzzle = _x#1;
+						//	if (_ammo == 0) then {_ammo = (_gunner ammo _muzzle)};
+						//	systemChat (_muzzle + ": " + str(_ammo));
+						//} forEach _muzzles;
+						//if (_ammo == 0) then {systemChat "mdhAc130outOfAmmo"};
+						//if (_v getVariable["tmp1",0] == 0) then {_v setVariable["tmp1",1];_v setVehicleAmmo 0.05};
+						//_v setCaptive true;
 					};
 				};
 	
