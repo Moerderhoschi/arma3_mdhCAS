@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2026-03-20
+// MDH CAS MOD(by Moerderhoschi) - v2026-03-29
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -310,9 +310,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-03-20)<br/>'
-							+ '<br/>'
-							+ 'you are able to call in an CAS Strike.<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-03-29)<br/>'
 							+ '<br/>'
 							+ 'MDH CAS Modoptions:'
 							+ '<br/><br/>'
@@ -320,14 +318,6 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',1,''MDH CAS Voicelanguage always BLUFOR english activated''] call mdhCASBriefingFnc">BLUFOR english</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModVoicelanguage'',2,''MDH CAS Voicelanguage Arma 3 side standard activated''] call mdhCASBriefingFnc">Arma 3 side standard</execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModVoicelanguage'',0,''MDH CAS Voicelanguage deactivated''] call mdhCASBriefingFnc">deact</execute></font color>'
-							//+ '<br/><br/>'
-							//+ 'Use MapMarker with CAS in name for next CAS Strike: '
-							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',1,''MDH CAS for MapMarker activated''] call mdhCASBriefingFnc">activate</execute></font color>'
-							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMapLocation'',0,''MDH CAS for MapMarker deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
-							//+ '<br/><br/>'
-							//+ 'Use RedSmoke near player for next CAS Strike: '
-							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModSmoke'',1,''MDH CAS RedSmoke activated''] call mdhCASBriefingFnc">activate</execute></font color>'
-							//+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModSmoke'',0,''MDH CAS RedSmoke deactivated''] call mdhCASBriefingFnc">deactivate</execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS debug mode: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModDebug'',true,''MDH CAS Debug mode activated''] call mdhCASBriefingFnc">activate</execute></font color>'
@@ -365,7 +355,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',240,''MDH CAS arrival time set to 4 min''] call mdhCASBriefingFnc"> 4 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModTimeArrival'',300,''MDH CAS arrival time set to 5 min''] call mdhCASBriefingFnc"> 5 </execute></font color>'
 							+ '<br/><br/>'
-							+ 'Set minDistance to friendly players for CAS target in meter: '
+							+ 'Set minDistance to friendly Units for CAS target in meter: '
 							+    '<font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',25,''MDH CAS min distance set to 25 meter''] call mdhCASBriefingFnc"> 25 </execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',50,''MDH CAS min distance set to 50 meter''] call mdhCASBriefingFnc"> 50 </execute></font color>'
 							+ ' / <font color="#CC0000"><execute expression = "[''mdhCASModMinDistance'',75,''MDH CAS min distance set to 75 meter''] call mdhCASBriefingFnc"> 75 </execute></font color>'
@@ -380,9 +370,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',450,''MDH CAS min distance set to 450 meter''] call mdhCASBriefingFnc"> 450</execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistance'',500,''MDH CAS min distance set to 500 meter''] call mdhCASBriefingFnc"> 500</execute></font color>'
 							+ '<br/><br/>'
+							+ 'Set minDistance to friendly Units valid for:'
+							+    '<font color="#33CC33"><execute expression = "[''mdhCASModMinDistanceValid'',1,''MDH CAS min distance valid for Players''] call mdhCASBriefingFnc"> players </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModMinDistanceValid'',2,''MDH CAS min distance valid for all Units''] call mdhCASBriefingFnc"> allUnits </execute></font color>'
+							+ '<br/><br/>'
 							+ 'Set behaviour when no red smoke found: '
 							+    '<font color="#CC0000"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',1,''MDH CAS no red smoke abort CAS activated''] call mdhCASBriefingFnc"> abort CAS </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',0,''MDH CAS no red smoke attack nearest taget activated''] call mdhCASBriefingFnc"> attack near target </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModNoRedSmokeThenAbort'',0,''MDH CAS no red smoke attack nearest taget activated''] call mdhCASBriefingFnc"> near caller </execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS planetype: '
 							+    '<font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',1,''MDH CAS planeType 1 activated''] call mdhCASBriefingFnc"> 1 </execute></font color>'
@@ -396,17 +390,25 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Gunship activated''] call mdhCASBriefingFnc"> Gunship </execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS call mode: '
-							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">rolling CAS</execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
-							+ ' /<br/>'
-							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
-							+ ' / red smoke: '
-							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode near red smoke near activated''] call mdhCASBriefingFnc">near </execute></font color>'
-							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode direct at red smoke activated''] call mdhCASBriefingFnc">direct</execute></font color>'
-							+ ' / cursortarget: '
-							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">near </execute></font color>'
-							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',7,''MDH CAS callmode direct at cursortarget activated''] call mdhCASBriefingFnc">direct</execute></font color>'
+//							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
+//							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">rolling CAS</execute></font color>'
+//							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
+//							+ ' /<br/>'
+//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
+//							+ ' / red smoke: '
+//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode near red smoke near activated''] call mdhCASBriefingFnc">near </execute></font color>'
+//							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode direct at red smoke activated''] call mdhCASBriefingFnc">direct</execute></font color>'
+//							+ ' / cursortarget: '
+//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">near </execute></font color>'
+//							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',7,''MDH CAS callmode direct at cursortarget activated''] call mdhCASBriefingFnc">direct</execute></font color>'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>: target nearest threat to player outside of minDistance'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode rolling CAS activated''] call mdhCASBriefingFnc">rolling CAS</execute></font color>: same as near caller but with automatic call after timeout'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>: CAS Plane every 30 seconds near caller with 10 planes'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>: target nearest threat at mapmarker with CAS in name'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode near red smoke near activated''] call mdhCASBriefingFnc">redSmoke near</execute></font color>: target nearest threat to red smoke shell'
+							+ '<br/><font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode direct at red smoke activated''] call mdhCASBriefingFnc">redSmoke direct</execute></font color>: target red smoke shell(<font color="#CC0000">minDistance ignored</font color>)'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">cursortarget near</execute></font color>: target nearest threat to cursortarget'
+							+ '<br/><font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',7,''MDH CAS callmode direct at cursortarget activated''] call mdhCASBriefingFnc">cursortarget direct</execute></font color>: target position of cursortarget(<font color="#CC0000">minDistance ignored</font color>)'
 							//+ '<br/><br/>'
 							//+ 'Set CAS item for call: '
 							//+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallitem'',0,''MDH CAS item to call set none''] call mdhCASBriefingFnc">none</execute></font color>'
@@ -415,19 +417,19 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ '<br/>-----------------------------------------------------------------------------------------------------'
 							+ '<br/><font color="#CC0000" size="40"><execute expression = "[''mdhCASModCallOverModTab'',true,''''] call mdhCASBriefingFnc">&gt;&gt;&gt; CALL MDH CAS &lt;&lt;&lt;</execute></font color>'
 							+ '<br/>-----------------------------------------------------------------------------------------------------'
-							+ '<br/>CAS CALL MODE DESCRIPTION:'
-							+ '<br/><font color="#33CC33">near caller:</font color> target nearest threat to player outside of minDistance'
-							+ '<br/><font color="#33CC33">rolling CAS:</font color> same as near caller but with automatic call after timeout'
-							+ '<br/><font color="#33CC33">BROKEN ARROW:</font color> CAS Plane every 30 seconds near caller with 10 planes'
-							+ '<br/><font color="#33CC33">CAS mapMarker:</font color> target nearest threat at mapmarker with CAS in name'
-							+ '<br/><font color="#33CC33">redSmoke near:</font color> target nearest threat to red smoke shell'
-							+ '<br/><font color="#CC0000">redSmoke direct:</font color> target red smoke shell(<font color="#CC0000">minDistance ignored</font color>)'
-							+ '<br/><font color="#33CC33">cursortarget near:</font color> target nearest threat to cursortarget'
-							+ '<br/><font color="#CC0000">cursortarget direct:</font color> target position of cursortarget(<font color="#CC0000">minDistance ignored</font color>)'
-							+ '<br/>-----------------------------------------------------------------------------------------------------'
-							+ '<br/>CAS TIMEOPTIONS DESCRIPTION:'
-							+ '<br/>ARRIVAL TIME: time needed for plane to arrive the AO after CAS call'
-							+ '<br/>TIMEOUT: timeout before you can call next plane after CAS strike'
+//							+ '<br/>CAS CALL MODE DESCRIPTION:'
+//							+ '<br/><font color="#33CC33">near caller:</font color> target nearest threat to player outside of minDistance'
+//							+ '<br/><font color="#33CC33">rolling CAS:</font color> same as near caller but with automatic call after timeout'
+//							+ '<br/><font color="#33CC33">BROKEN ARROW:</font color> CAS Plane every 30 seconds near caller with 10 planes'
+//							+ '<br/><font color="#33CC33">CAS mapMarker:</font color> target nearest threat at mapmarker with CAS in name'
+//							+ '<br/><font color="#33CC33">redSmoke near:</font color> target nearest threat to red smoke shell'
+//							+ '<br/><font color="#CC0000">redSmoke direct:</font color> target red smoke shell(<font color="#CC0000">minDistance ignored</font color>)'
+//							+ '<br/><font color="#33CC33">cursortarget near:</font color> target nearest threat to cursortarget'
+//							+ '<br/><font color="#CC0000">cursortarget direct:</font color> target position of cursortarget(<font color="#CC0000">minDistance ignored</font color>)'
+//							+ '<br/>-----------------------------------------------------------------------------------------------------'
+							+ '<br/>CAS time options description:'
+							+ '<br/>arrival time: time needed for plane to arrive the AO after CAS call'
+							+ '<br/>Timeout: timeout before you can call next plane after CAS strike'
 							+ '<br/>-----------------------------------------------------------------------------------------------------'
 							+ '<br/>'
 							+ '<br/>If you have any question you can contact me at the steam workshop page.'
@@ -766,7 +768,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											_x sort true;
 											{
 												_t1 = _x#1;
-												if (allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1) then {_t = _t1};
+												_friendlyUnits = allPlayers;
+												if (profileNameSpace getVariable ["mdhCASModMinDistanceValid",1] > 1) then {_friendlyUnits = allUnits};
+												if (_friendlyUnits findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1) then {_t = _t1};
 											} forEach _x;
 										};
 									} forEach [_mbt, _AA, _tanks, _cars, _mbtMoving, _AAmoving, _tanksMoving, _carsMoving];
@@ -781,7 +785,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 												&& {side _x in _enemySides} 
 												&& {(getPos vehicle _x)#2 < 3} 
 												&& {_x distance _strikePos < _v } 
-												&& {_t1 = _x; allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1} 
+												&&
+												{
+													_t1 = _x;
+													_friendlyUnits = allPlayers;
+													if (profileNameSpace getVariable ["mdhCASModMinDistanceValid",1] > 1) then {_friendlyUnits = allUnits};
+													_friendlyUnits findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t1 < _safeDistance}} == -1
+												} 
 											)
 											then
 											{
@@ -869,7 +879,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									};
 
 									systemChat "Close Air Support canceled no valid targets found";
-									_s = "(to close or to far from friendly players)";
+									_s = "(to close or to far from friendly units)";
 
 									if (_MapLocation == 1) then {_s = ("(no map marker with CAS in name found)")};
 									if (_MapLocation == 2) then {_s = ('(no targets found at map marker "' + _markerText + '")')};
@@ -1268,10 +1278,20 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									{
 										// 3 direct at red smoke, 7 direct at cursortarget
 										// before Gunrun check if friendly nearby and abort
-										if (!(_callMode in [3,7]) && {allPlayers findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t < (profileNameSpace getVariable ["mdhCASModMinDistance",250])}} != -1}) exitWith
+										if
+										(
+											!(_callMode in [3,7])
+											&&
+											{
+												_friendlyUnits = allPlayers;
+												if (profileNameSpace getVariable ["mdhCASModMinDistanceValid",1] > 1) then {_friendlyUnits = allUnits};
+												_friendlyUnits findIf {side group _x getFriend side group player > 0.5 && {vehicle _x distance _t < (profileNameSpace getVariable ["mdhCASModMinDistance",250])}} != -1
+											}
+										)
+										exitWith
 										{
 											_plane setVariable ["onlyMissile",2];
-											systemChat "MDH CAS friendly players near target(minDistance), abort gunrun!";
+											systemChat "MDH CAS friendly units near target(minDistance), abort gunrun!";
 										};
 
 										_z="--- Create laser target";
