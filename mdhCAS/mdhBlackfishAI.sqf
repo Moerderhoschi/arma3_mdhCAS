@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2025-09-02
+// MDH CAS MOD(by Moerderhoschi) - v2026-05-26
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ _hoschisBlackfishCode =
 
 		_MapLocation = 0;
 		_markerText = "";
-		if (_callMode == 1) then
+		if (_callMode in [1,8]) then
 		{
 			_MapLocation = 1;
 			_s = "_USER_DEFINED #" + getPlayerID player;
@@ -130,7 +130,19 @@ _hoschisBlackfishCode =
 						_safeDistance = 0;
 					};
 				} forEach allMapMarkers;
-			};									
+			};
+
+			if (_MapLocation == 1) then
+			{
+				if (customWaypointPosition isNotEqualTo []) exitWith
+				{
+					_MapLocation = 2;
+					_markerText = "players custom Waypoint";
+					_strikePos = customWaypointPosition;
+					_strikePosMode = 2;
+					_safeDistance = 0;
+				};
+			};
 		};
 
 		_redSmoke = 0;
@@ -210,8 +222,16 @@ _hoschisBlackfishCode =
 		_side = side group player;
 		_pos = [_pos#0, _pos#1, 1];
 		_planeClass = "B_T_VTOL_01_armed_F";
-		if (isclass(configfile >> "cfgvehicles" >> "USAF_AC130U")) then {_planeClass = "USAF_AC130U"};
-		if (isclass(configfile >> "cfgvehicles" >> "vnx_b_air_ac119_01_01")) then {_planeClass = "vnx_b_air_ac119_01_01"};
+		if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] == 2) then
+		{
+			if (isclass(configfile >> "cfgvehicles" >> "USAF_AC130U")) then {_planeClass = "USAF_AC130U"};
+		};
+
+		if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] == 3) then
+		{
+			if (isclass(configfile >> "cfgvehicles" >> "vnx_b_air_ac119_01_01")) then {_planeClass = "vnx_b_air_ac119_01_01"};
+		};
+
 		_v = [[(0 + (ceil random 20)*10),(0 + (ceil random 20)*10), (2000+(ceil random 20)*10)], 0, _planeClass, _side] call BIS_fnc_spawnVehicle;
 		_v = _v#0;
 		_v setpos [(_pos#0 + (ceil random 20)*10), (_pos#1 + (ceil random 20)*10), (2000+(ceil random 20)*10)];
@@ -298,7 +318,7 @@ _hoschisBlackfishCode =
 						} forEach [(_v getVariable ["mdhAc130Target",(_v findNearestEnemy _v)])];
 					};
 				},[_v]];
-				[_eh,_v]spawn{params["_eh","_v"];_time = time + 600; waitUntil{sleep 1; time > _time or _v getVariable["mdhAc130End",false] or !alive _v};removeMissionEventHandler["Draw3D",_eh]};
+				[_eh,_v]spawn{params["_eh","_v"];_time = time + 600; waitUntil{sleep 1; time > _time or _v getVariable["mdhAc130End",false] or !alive _v or !(profileNameSpace getVariable ["mdhCASModDebug",false])};removeMissionEventHandler["Draw3D",_eh]};
 			};
 
 			while{((_v getVariable["mdhAc130StartTime",0])+600) > time && !(_v getVariable["mdhAc130End",false]) && {alive _v} && {damage _v < 0.2}} do
@@ -315,6 +335,10 @@ _hoschisBlackfishCode =
 							_u = gunner _v;
 							_p = _projectile;
 							_v setVehicleAmmo 1;
+							if (profileNameSpace getVariable ["mdhCASModDebug",false]) then
+							{
+								if (_v getVariable["mdhAc130LastFired",-1] < time - 1 ) then {systemChat (str(_projectile))};
+							};
 							//systemChat ("BlackFishAmmo: "+str(_gunner ammo _muzzle));
 							//_muzzles = _v getVariable["mdhAc130Muzzles",[]];
 							//_muzzles pushBackUnique [_gunner,_muzzle];
@@ -463,7 +487,7 @@ _hoschisBlackfishCode =
 
 						if (count _units > 0 && {alive _v}) then
 						{
-							_e = vehicle(selectRandom (_units));
+							_e = (selectRandom (_units));
 							if (_t != player && {alive _t}) then {_e = _t};
 							_v setVariable ["mdhAc130Target",_e];
 
@@ -483,10 +507,19 @@ _hoschisBlackfishCode =
 												if (alive _v) then
 												{
 													sleep (1/15);
-													if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 5]};
-													if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 2]};
-													if (_planeClass == "vnx_b_air_ac119_01_01") then {_v action ["useWeapon", _v, _v turretUnit[1], 5]};
-													if (_planeClass == "vnx_b_air_ac119_01_01") then {_v action ["useWeapon", _v, _v turretUnit[1], 8]};
+													if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 5]}; // 20mm HE
+													if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 2]};  // 25mm HE
+													if (_planeClass == "vnx_b_air_ac119_01_01") then
+													{
+														if (vehicle _e == _e) then
+														{
+															_v action ["useWeapon", _v, _v turretUnit[1], 8]; // 7.62mm
+														}
+														else
+														{
+															_v action ["useWeapon", _v, _v turretUnit[1], 5]; // 20mm HE
+														};
+													};
 												}
 											}
 										};
@@ -502,8 +535,8 @@ _hoschisBlackfishCode =
 									if (vehicle _e == _e && {_j}) then
 									{
 										sleep 0.35;
-										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 0]};
-										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]};
+										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 0]}; // 40mm HE
+										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]}; // 40mm HE
 									}
 								};
 								sleep 0.6;
@@ -513,16 +546,16 @@ _hoschisBlackfishCode =
 									if (vehicle _e != _e && {_j}) then
 									{
 										sleep 0.35;
-										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 5]};
-										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]};
+										if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u2, 5]}; // 40mm AP
+										if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 3]}; // 40mm HE
 									}
 								};
 								
 								if (alive _e && {alive _v}) then
 								{
 									sleep 1;
-									if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 0]};
-									if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 4]};
+									if (_planeClass == "B_T_VTOL_01_armed_F") then {_v action ["useWeapon", _v, _u, 0]}; // 105mm HEAT
+									if (_planeClass == "USAF_AC130U") then {_v action ["useWeapon", _v, _v turretUnit[2], 4]}; // 105mm HEDP
 								};
 							}
 							else

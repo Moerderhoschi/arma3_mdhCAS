@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2026-03-29
+// MDH CAS MOD(by Moerderhoschi) - v2026-05-25
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,9 +214,14 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							[player] call _code;
 						};
 
-						// 4 Rolling CAS, 5 BROKEN ARROW
+						// 4 Rolling CAS, 5 BROKEN ARROW, 8 CAS mapMarker direct
 						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) != 5}) then {missionNameSpace setVariable['mdhCASBrokenArrow',0]};
 						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) in [4,5]}) then {profileNameSpace setVariable["mdhCASModBlackfishSelected",0]};
+						if ((_this#0) == "mdhCASModCallMode" && {(profileNameSpace getVariable["mdhCASModCallMode",-1]) in [1]} && {(_this#1) in [1]}) then
+						{
+							_this set [1, 8];
+							_this set [2, "MDH CAS callmode CAS mapMarker direct activated"];
+						};
 
 						if (_this#0 == "mdhCASModTimeout") then
 						{
@@ -233,18 +238,31 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							};
 						};
 
-						profileNameSpace setVariable[_this#0,_this#1];
-						systemChat (_this#2);
-
 						if ((_this#0) == "mdhCASModPlaneType") then
 						{
 							if ((_this#1) == 9) then
 							{
-								profileNameSpace setVariable["mdhCASModBlackfishSelected",1];
 								// 4 Rolling CAS, 5 BROKEN ARROW
 								if (profileNameSpace getVariable["mdhCASModCallMode",0] in [4,5]) then
 								{
 									profileNameSpace setVariable["mdhCASModCallMode",0];
+								};
+
+								if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] in [0,3]) exitWith
+								{
+									profileNameSpace setVariable["mdhCASModBlackfishSelected",1];
+								};
+
+								if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] == 1) exitWith
+								{
+									profileNameSpace setVariable["mdhCASModBlackfishSelected",2];
+									_this set [2, "MDH CAS AC-130 Gunship activated"];
+								};
+
+								if (profileNameSpace getVariable["mdhCASModBlackfishSelected",0] == 2) exitWith
+								{
+									profileNameSpace setVariable["mdhCASModBlackfishSelected",3];
+									_this set [2, "MDH CAS AC-119 Gunship activated"];
 								};
 							}
 							else
@@ -302,6 +320,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								//} forEach _w;
 							};
 						};
+
+						profileNameSpace setVariable[_this#0,_this#1];
+						systemChat (_this#2);
 					};
 
 					player createDiaryRecord
@@ -310,7 +331,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-03-29)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-05-25)<br/>'
 							+ '<br/>'
 							+ 'MDH CAS Modoptions:'
 							+ '<br/><br/>'
@@ -387,24 +408,13 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',6,''MDH CAS planeType 6 activated''] call mdhCASBriefingFnc"> 6 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',7,''MDH CAS planeType 6 activated''] call mdhCASBriefingFnc"> 7 </execute></font color>'
 							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',8,''MDH CAS planeType 8 activated''] call mdhCASBriefingFnc"> 8 </execute></font color>'
-							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Gunship activated''] call mdhCASBriefingFnc"> Gunship </execute></font color>'
+							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModPlaneType'',9,''MDH CAS Blackfish Gunship activated''] call mdhCASBriefingFnc"> Gunship </execute></font color>'
 							+ '<br/><br/>'
 							+ 'Set CAS call mode: '
-//							+    '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>'
-//							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode Rolling CAS activated''] call mdhCASBriefingFnc">rolling CAS</execute></font color>'
-//							+ ' / <font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>'
-//							+ ' /<br/>'
-//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>'
-//							+ ' / red smoke: '
-//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode near red smoke near activated''] call mdhCASBriefingFnc">near </execute></font color>'
-//							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode direct at red smoke activated''] call mdhCASBriefingFnc">direct</execute></font color>'
-//							+ ' / cursortarget: '
-//							+ '<font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">near </execute></font color>'
-//							+ '<font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',7,''MDH CAS callmode direct at cursortarget activated''] call mdhCASBriefingFnc">direct</execute></font color>'
 							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',0,''MDH CAS callmode near caller activated''] call mdhCASBriefingFnc">near caller</execute></font color>: target nearest threat to player outside of minDistance'
 							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',4,''MDH CAS callmode rolling CAS activated''] call mdhCASBriefingFnc">rolling CAS</execute></font color>: same as near caller but with automatic call after timeout'
 							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',5,''MDH CAS callmode BROKEN ARROW activated''] call mdhCASBriefingFnc">BROKEN ARROW</execute></font color>: CAS Plane every 30 seconds near caller with 10 planes'
-							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>: target nearest threat at mapmarker with CAS in name'
+							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',1,''MDH CAS callmode CAS mapMarker near target activated''] call mdhCASBriefingFnc">CAS mapMarker</execute></font color>: target nearest threat at mapmarker with CAS in name'
 							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',2,''MDH CAS callmode near red smoke near activated''] call mdhCASBriefingFnc">redSmoke near</execute></font color>: target nearest threat to red smoke shell'
 							+ '<br/><font color="#CC0000"><execute expression = "[''mdhCASModCallMode'',3,''MDH CAS callmode direct at red smoke activated''] call mdhCASBriefingFnc">redSmoke direct</execute></font color>: target red smoke shell(<font color="#CC0000">minDistance ignored</font color>)'
 							+ '<br/><font color="#33CC33"><execute expression = "[''mdhCASModCallMode'',6,''MDH CAS callmode near cursortarget activated''] call mdhCASBriefingFnc">cursortarget near</execute></font color>: target nearest threat to cursortarget'
@@ -559,6 +569,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									};
 								};
 								if (count _strikePos == 0) exitWith {systemChat "MDH CAS no cursortarget found"};
+								if (_callMode == 7 && {_strikePos distance vehicle player < 75}) exitWith {systemChat "MDH CAS cursortarget to close to player for direct mode"};
 
 								_brokenArrow = (missionNameSpace getVariable["mdhCASBrokenArrow",0]);
 								if ((profileNameSpace getVariable ["mdhCASModDebug",false]) && {_brokenArrow == 0}) then {systemChat "MDH CAS Debug mode active"};
@@ -630,7 +641,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 								_MapLocation = 0;
 								_markerText = "";
-								if (_callMode == 1) then
+								// 1 CAS mapMarker near target, 8 CAS mapMarker direct
+								if (_callMode in [1,8]) then
 								{
 									_MapLocation = 1;
 									_s = "_USER_DEFINED #" + getPlayerID player;
@@ -692,8 +704,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									} forEach _n;
 								};
 
-								// 7 direct at cursortarget
-								if (_callMode in [7]) then {_safeDistance = 0};
+								// 7 direct at cursortarget, 8 CAS mapMarker direct
+								if (_callMode in [7,8]) then {_safeDistance = 0};
 
 								_dist = _v;
 								_distMax = 1500;
@@ -853,8 +865,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									};
 								};
 
-								// 7 direct at cursortarget
-								if (_callMode == 7) then
+								// 7 direct at cursortarget, 8 CAS mapMarker direct
+								if (_callMode in [7,8]) then
 								{
 									_t = "logic" createVehicleLocal _strikePos;
 									_t spawn {scriptName "mdhCasDelteLogicIn90sec";sleep 90; deleteVehicle _this};
@@ -1566,7 +1578,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								,"
 								alive _target 
 								&& {profileNameSpace getVariable ['mdhCASModActionmenu',true]}
-								&& {profileNameSpace getVariable['mdhCASModBlackfishSelected',0] == 1}
+								&& {profileNameSpace getVariable['mdhCASModBlackfishSelected',0] > 0}
 								&& {missionNameSpace getVariable['mdhCASModCallTime',time - 1] < time}
 								&& {missionNameSpace getVariable['mdhCASModBlackfishActive',0] == 0}
 								&& {if (!isNil'mdhCASModNeededItemToCall') then
