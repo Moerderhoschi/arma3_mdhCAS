@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// MDH CAS MOD(by Moerderhoschi) - v2026-05-25
+// MDH CAS MOD(by Moerderhoschi) - v2026-06-26
 // github: https://github.com/Moerderhoschi/arma3_mdhCAS
 // steam mod version: https://steamcommunity.com/sharedfiles/filedetails/?id=3473212949
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,13 +214,21 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 							[player] call _code;
 						};
 
-						// 4 Rolling CAS, 5 BROKEN ARROW, 8 CAS mapMarker direct
+						// 4 Rolling CAS, 5 BROKEN ARROW, 8 CAS mapMarker direct, 9 CAS mapMarker Rolling CAS
 						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) != 5}) then {missionNameSpace setVariable['mdhCASBrokenArrow',0]};
 						if ((_this#0) == "mdhCASModCallMode" && {(_this#1) in [4,5]}) then {profileNameSpace setVariable["mdhCASModBlackfishSelected",0]};
-						if ((_this#0) == "mdhCASModCallMode" && {(profileNameSpace getVariable["mdhCASModCallMode",-1]) in [1]} && {(_this#1) in [1]}) then
+						if ((_this#0) == "mdhCASModCallMode" && {(profileNameSpace getVariable["mdhCASModCallMode",-1]) in [1,8]} && {(_this#1) in [1,8]}) then
 						{
-							_this set [1, 8];
-							_this set [2, "MDH CAS callmode CAS mapMarker direct activated"];
+							if ((profileNameSpace getVariable["mdhCASModCallMode",-1]) in [1]) then
+							{
+								_this set [1, 8];
+								_this set [2, "MDH CAS callmode CAS mapMarker direct activated"];
+							}
+							else
+							{
+								_this set [1, 9];
+								_this set [2, "MDH CAS callmode CAS mapMarker Rolling CAS activated"];
+							};
 						};
 
 						if (_this#0 == "mdhCASModTimeout") then
@@ -331,7 +339,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 						[
 							_t,
 							(
-								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-05-25)<br/>'
+								'<br/>MDH CAS is a mod created by Moerderhoschi for Arma 3. (v2026-06-26)<br/>'
 							+ '<br/>'
 							+ 'MDH CAS Modoptions:'
 							+ '<br/><br/>'
@@ -641,8 +649,8 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 
 								_MapLocation = 0;
 								_markerText = "";
-								// 1 CAS mapMarker near target, 8 CAS mapMarker direct
-								if (_callMode in [1,8]) then
+								// 1 CAS mapMarker near target, 8 CAS mapMarker direct, 9 CAS mapMarker Rolling CAS
+								if (_callMode in [1,8,9]) then
 								{
 									_MapLocation = 1;
 									_s = "_USER_DEFINED #" + getPlayerID player;
@@ -894,7 +902,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 									_s = "(to close or to far from friendly units)";
 
 									if (_MapLocation == 1) then {_s = ("(no map marker with CAS in name found)")};
-									if (_MapLocation == 2) then {_s = ('(no targets found at map marker "' + _markerText + '")')};
+									if (_MapLocation == 2) then {_s = ('(no valid targets found at map marker "' + _markerText + '")')};
 									if (_redSmoke == 1) then {_s = "(no red smoke around 1000 meter of caller found)"};
 
 									systemChat _s;
@@ -1486,7 +1494,7 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 								missionNameSpace setVariable['mdhCASModCallTime',time + 3 + _timeout];
 
 								// 4 Rolling CAS auto call
-								if (profileNameSpace getVariable['mdhCASModCallMode',0] == 4) then
+								if (profileNameSpace getVariable['mdhCASModCallMode',0] in [4,9]) then
 								{
 									0 spawn
 									{
@@ -1497,9 +1505,9 @@ if (missionNameSpace getVariable ["pMdhCAS",99] == 99) then
 											sleep 1;
 											_timeout = profileNameSpace getVariable['mdhCASModTimeout',60];
 											if (time > _time + _timeout) exitWith {};
-											if (profileNameSpace getVariable['mdhCASModCallMode',0] != 4) exitWith {};
+											if !(profileNameSpace getVariable['mdhCASModCallMode',0] in [4,9]) exitWith {};
 										};
-										if (profileNameSpace getVariable['mdhCASModCallMode',0] != 4) exitWith {};
+										if !(profileNameSpace getVariable['mdhCASModCallMode',0] in [4,9]) exitWith {};
 										call (missionNameSpace getVariable["mdhCASCode",{systemChat "mdhCASCode not found!"}]);
 									};
 								};
